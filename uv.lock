@@ -331,7 +331,7 @@ wheels = [
 [[package]]
 name = "dataspot-facade-api"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "dcc-backend-common", extra = ["fastapi"] },
     { name = "fastapi", extra = ["standard"] },

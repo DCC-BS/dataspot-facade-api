@@ -1,10 +1,12 @@
 
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from structlog.stdlib import BoundLogger
 
 from dcc_backend_common.logger import get_logger
 from dcc_backend_common.fastapi_health_probes import health_probe_router
+
+from dataspot_facade_api.routers import example_router
 
 
 def create_app() -> FastAPI:
@@ -15,8 +17,11 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="Dataspot Facade API",
         description="TODO",
-        version="0.1.0",
+        version="v1",
     )
+
+    api_prefix = "/v1"
+    api_router = APIRouter(prefix=api_prefix)
 
     # app.include_router(health_probe_router(service_dependencies))
 
@@ -34,15 +39,16 @@ def create_app() -> FastAPI:
     # add_logging_middleware(app)
 
     logger.debug("Registering API routers")
-    # app.include_router(advisor.create_router())
-    # app.include_router(quick_action.create_router())
-    # app.include_router(word_synonym.create_router())
-    # app.include_router(sentence_rewrite.create_router())
-    # app.include_router(convert_route.create_router())
-    # app.include_router(user_action_route.create_router())
-    # app.include_router(text_analysis.create_router())
-    # app.include_router(simplify.create_router())
+    api_router.include_router(example_router.create_router())
+    # api_router.include_router(quick_action.create_router())
+    # api_router.include_router(word_synonym.create_router())
+    # api_router.include_router(sentence_rewrite.create_router())
+    # api_router.include_router(convert_route.create_router())
+    # api_router.include_router(user_action_route.create_router())
+    # api_router.include_router(text_analysis.create_router())
+    # api_router.include_router(simplify.create_router())
     logger.debug("All routers registered")
+    app.include_router(api_router)
 
     logger.info("API setup complete")
     return app
