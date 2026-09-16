@@ -1,0 +1,10 @@
+[project]
+name = "dataspot-facade-api"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "dcc-backend-common[fastapi]>=0.1.23",
+    "fastapi[standard]>=0.141.1",
+]
