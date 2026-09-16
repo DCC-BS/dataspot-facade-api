@@ -1,0 +1,6 @@
+[tools]
+uv = "latest"
+
+[tasks.dev]
+description = "Run the FastAPI app with auto-reload"
+run = "uv run fastapi dev ./src/dataspot_facade_api/app.py"
