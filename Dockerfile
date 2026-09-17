@@ -46,6 +46,9 @@ ENV IS_PROD=true
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
+# Runtime python is the one assembled from uv in the build stage
+ENV PATH="/app/.venv/bin:$PATH"
+
 # Copy the built application and the minimal runtime (python + varlock) from
 # the build stage
 COPY --from=build --chown=app:app /app /app
@@ -58,4 +61,4 @@ USER app
 EXPOSE 8000
 
 # Start the application: load env via varlock, then run uvicorn with the runtime python
-ENTRYPOINT ["/bin/sh", "-c", "uvicorn dataspot_facade_api.app:app --host 0.0.0.0 --port \"${PORT:-8000}\" --no-access-log"]
+ENTRYPOINT ["/bin/sh", "-c", "/app/.venv/bin/uvicorn dataspot_facade_api.app:app --host 0.0.0.0 --port \"${PORT:-8000}\" --no-access-log"]
