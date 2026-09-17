@@ -12,6 +12,9 @@ logger = get_logger("authorization_service")
 FACADE_API_PERMISSION_UPDATE_LAST_UPDATE_DS = "UPDATE_LAST_UPDATE_DS"
 """Permission code for 'Feld eines Assets als Data Steward aktualisieren' under Facade-API Berechtigungen."""
 
+FACADE_API_PERMISSION_EXECUTE_QUERY = "QUERY"
+"""Permission code for 'Query-Befehle' under Facade-API Berechtigungen."""
+
 DATA_STEWARD_QUERY_TEMPLATE = """
 SELECT DISTINCT
     u.login_id AS email
@@ -73,28 +76,15 @@ class DatasetAuthorizationService:
         """Raise NotAuthorizedError unless the user holds the facade-API permission
         and is a Data Steward of the given dataset."""
         async with httpx.AsyncClient(timeout=30.0) as client:
-            await self._ensure_has_facade_api_permission(client, payload)
-            await self._ensure_is_data_steward(client, dataset_id, payload.email)
-
-    async def _ensure_has_facade_api_permission(self, client: httpx.AsyncClient, payload: JwtPayload) -> None:
-        headers = self._dataspot_auth.get_service_headers()
-        response = await client.get(f"{self._rest_base_url()}/persons/{payload.person_id}", headers=headers)
-
-        if response.status_code != 200:
-            logger.error(
-                "Failed to fetch person for permission check",
-                person_id=payload.person_id,
-                status_code=response.status_code,
+            await _ensure_has_facade_api_permission(
+                client,
+                self._rest_base_url(),
+                self._dataspot_auth,
+                payload,
+                FACADE_API_PERMISSION_UPDATE_LAST_UPDATE_DS,
+                "Feld eines Assets als Data Steward aktualisieren",
             )
-            raise NotAuthorizedError("Could not verify facade-API permissions")
-
-        person = response.json()
-        custom_properties = person.get("customProperties") or {}
-        permissions = _as_permission_set(custom_properties.get("facade_api_permissions"))
-
-        if FACADE_API_PERMISSION_UPDATE_LAST_UPDATE_DS not in permissions:
-            logger.info("User lacks facade-API permission", email=payload.email)
-            raise NotAuthorizedError("Missing 'Feld eines Assets als Data Steward aktualisieren' permission")
+            await self._ensure_is_data_steward(client, dataset_id, payload.email)
 
     async def _ensure_is_data_steward(self, client: httpx.AsyncClient, dataset_id: UUID, email: str) -> None:
         headers = self._dataspot_auth.get_service_headers()
@@ -113,6 +103,58 @@ class DatasetAuthorizationService:
         if email.strip().lower() not in stewards:
             logger.info("User is not a Data Steward of dataset", email=email, dataset_id=str(dataset_id))
             raise NotAuthorizedError("User is not a Data Steward of this dataset")
+
+
+class QueryAuthorizationService:
+    """Authorizes facade-API SQL query execution against Dataspot permissions."""
+
+    def __init__(self, config: Configuration, dataspot_auth: DataspotAuthClient):
+        self._config = config
+        self._dataspot_auth = dataspot_auth
+
+    def _rest_base_url(self) -> str:
+        return f"{self._config.base_url}/rest/{self._config.database_name}"
+
+    async def ensure_can_execute_query(self, payload: JwtPayload) -> None:
+        """Raise NotAuthorizedError unless the user holds the 'Query-Befehle' facade-API permission."""
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            await _ensure_has_facade_api_permission(
+                client,
+                self._rest_base_url(),
+                self._dataspot_auth,
+                payload,
+                FACADE_API_PERMISSION_EXECUTE_QUERY,
+                "Query-Befehle",
+            )
+
+
+async def _ensure_has_facade_api_permission(
+    client: httpx.AsyncClient,
+    rest_base_url: str,
+    dataspot_auth: DataspotAuthClient,
+    payload: JwtPayload,
+    permission_code: str,
+    permission_label: str,
+) -> None:
+    """Raise NotAuthorizedError unless the person holds `permission_code` under Facade-API Berechtigungen."""
+    headers = dataspot_auth.get_service_headers()
+    response = await client.get(f"{rest_base_url}/persons/{payload.person_id}", headers=headers)
+
+    if response.status_code != 200:
+        logger.error(
+            "Failed to fetch person for permission check",
+            person_id=payload.person_id,
+            status_code=response.status_code,
+        )
+        raise NotAuthorizedError("Could not verify facade-API permissions")
+
+    person = response.json()
+    custom_properties = person.get("customProperties") or {}
+    permissions = _as_permission_set(custom_properties.get("facade_api_permissions"))
+
+    if permission_code not in permissions:
+        logger.info("User lacks facade-API permission", email=payload.email, permission=permission_code)
+        raise NotAuthorizedError(f"Missing '{permission_label}' permission")
 
 
 def _as_permission_set(value: object) -> set[str]:
