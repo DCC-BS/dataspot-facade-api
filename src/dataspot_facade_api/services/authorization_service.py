@@ -64,7 +64,7 @@ class DatasetAuthorizationService:
         self._dataspot_auth = dataspot_auth
 
     def _rest_base_url(self) -> str:
-        return f"{self._config.base_DATA_STEWARD_QUERY_TEMPLATEurl}/rest/{self._config.database_name}"
+        return f"{self._config.base_url}/rest/{self._config.database_name}"
 
     def _query_url(self) -> str:
         return f"{self._config.base_url}/api/{self._config.database_name}/queries/download?format=JSON"
