@@ -13,7 +13,7 @@ from dataspot_facade_api.services.dataset_service import (
     DatasetService,
     DatasetUpdateError,
 )
-from dataspot_facade_api.utils.jwt_utils import JwtPayload
+from dataspot_facade_api.services.utils.jwt_utils import JwtPayload
 
 logger = get_logger("dataset_router")
 
@@ -23,9 +23,7 @@ _jwt_payload_dependency = Depends(get_jwt_payload)
 @inject
 def create_router(
     dataset_service: DatasetService = Provide[Container.dataset_service],
-    authorization_service: DatasetAuthorizationService = Provide[
-        Container.dataset_authorization_service
-    ],
+    authorization_service: DatasetAuthorizationService = Provide[Container.dataset_authorization_service],
 ) -> APIRouter:
     logger.debug("Creating dataset router")
     router = APIRouter(prefix="/datasets", tags=["datasets"])

@@ -9,7 +9,7 @@ from dataspot_facade_api.container import Container
 from dataspot_facade_api.dependencies import get_jwt_payload
 from dataspot_facade_api.models.query import QueryRequest
 from dataspot_facade_api.services.query_service import QueryService
-from dataspot_facade_api.utils.jwt_utils import JwtPayload
+from dataspot_facade_api.services.utils.jwt_utils import JwtPayload
 
 logger = get_logger("query_router")
 
