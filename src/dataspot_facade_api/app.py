@@ -126,7 +126,7 @@ def create_app() -> FastAPI:
     logger.debug("Registering API routers")
     api_router.include_router(example_router.create_router())
     api_router.include_router(auth_router.create_router(config))
-    api_router.include_router(query_router.create_router(config))
+    api_router.include_router(query_router.create_router(config, container.query_authorization_service()))
     api_router.include_router(
         dataset_router.create_router(container.dataset_service(), container.dataset_authorization_service())
     )
