@@ -19,7 +19,7 @@ class DataspotAuth:
 
         # M2M authentication against Entra ID
         exposed_client_id = os.getenv("DATASPOT_EXPOSED_CLIENT_ID")
-        self.scope = f'api://{exposed_client_id}/.default'
+        self.scope = f"api://{exposed_client_id}/.default"
         self.tenant_id = os.getenv("DATASPOT_TENANT_ID")
         self.client_id = os.getenv("DATASPOT_CLIENT_ID")
         self.client_secret = os.getenv("DATASPOT_CLIENT_SECRET")
@@ -51,10 +51,10 @@ class DataspotAuth:
     def _request_new_bearer_token(self):
         """Request a new bearer token using M2M authentication."""
         data = {
-            'client_id': self.client_id,
-            'client_secret': self.client_secret,
-            'grant_type': 'client_credentials',
-            'scope': self.scope
+            "client_id": self.client_id,
+            "client_secret": self.client_secret,
+            "grant_type": "client_credentials",
+            "scope": self.scope,
         }
 
         try:
@@ -62,25 +62,25 @@ class DataspotAuth:
             response_bearer.raise_for_status()
 
             token_data = response_bearer.json()
-            self.token = token_data['access_token']
+            self.token = token_data["access_token"]
             # Calculate token expiration time
-            expires_in = int(token_data.get('expires_in', 3600))
+            expires_in = int(token_data.get("expires_in", 3600))
             self.token_expires_at = datetime.now() + timedelta(seconds=expires_in)
 
             return self.token
 
         except requests.exceptions.RequestException as e:
-            if hasattr(e, 'response') and e.response.status_code == 401:
+            if hasattr(e, "response") and e.response.status_code == 401:
                 logging.error("\n" + "!" * 80)
                 logging.error("AUTHENTICATION FAILED: Your DATASPOT_CLIENT_SECRET has likely expired!")
                 logging.error("Please create a new client secret in the Azure portal:")
                 logging.error("Entra ID > App registrations > Your app > Certificates & secrets > New client secret")
                 logging.error("Then update the DATASPOT_CLIENT_SECRET environment variable with the new value.")
                 logging.error("!" * 80 + "\n")
-                raise Exception("DATASPOT_CLIENT_SECRET validation failed - the secret may have expired")
+                raise Exception("DATASPOT_CLIENT_SECRET validation failed - the secret may have expired") from e
 
             # For other errors, just raise with the original message
-            raise Exception(f"Failed to obtain M2M access token from Entra ID: {str(e)}")
+            raise Exception(f"Failed to obtain M2M access token from Entra ID: {str(e)}") from e
 
     def _validate_access_key(self):
         """Validates the access key by making a test request to dataspot API.
@@ -113,9 +113,9 @@ class DataspotAuth:
 
         bearer_access_token = self.get_bearer_access_token()
         return {
-            'Authorization': f'Bearer {bearer_access_token}',
-            'dataspot-access-key': self.dataspot_access_key,
-            'Content-Type': 'application/json'
+            "Authorization": f"Bearer {bearer_access_token}",
+            "dataspot-access-key": self.dataspot_access_key,
+            "Content-Type": "application/json",
         }
 
 
@@ -126,7 +126,9 @@ if __name__ == "__main__":
 
     print("Testing sample request to dataspot...")
     headers = auth.get_headers()
-    response = requests.get(url=f"https://datenkatalog.bs.ch/rest/{config.database_name}/schemes/Systeme", headers=headers)
+    response = requests.get(
+        url=f"https://datenkatalog.bs.ch/rest/{config.database_name}/schemes/Systeme", headers=headers
+    )
     response.raise_for_status()
 
     if response.status_code == 200:

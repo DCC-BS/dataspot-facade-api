@@ -17,8 +17,10 @@ def create_router(config: Configuration) -> APIRouter:
         dataspot_auth = DataspotAuthClient()
         auth_service = AuthService(config=config, dataspot_auth=dataspot_auth)
 
+        logger.debug("Validating access key")
         user_info = auth_service.validate_and_identify(request.access_key)
         if user_info is None:
+            logger.warning("Authentication failed: invalid access key")
             raise HTTPException(status_code=401, detail="Invalid access key")
 
         token = AuthService.create_jwt(
@@ -29,7 +31,7 @@ def create_router(config: Configuration) -> APIRouter:
             algorithm=config.jwt_algorithm,
             expires_in_seconds=config.jwt_expires_in_seconds,
         )
-
+        logger.info("User authenticated", user=user_info.email)
         return AuthResponse(access_token=token)
 
     logger.debug("Auth router configured")
