@@ -1,18 +1,27 @@
-
+from dcc_backend_common.logger import get_logger, init_logger
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from structlog.stdlib import BoundLogger
 
-from dcc_backend_common.logger import get_logger
-from dcc_backend_common.fastapi_health_probes import health_probe_router
-
-from dataspot_facade_api.routers import example_router
+from dataspot_facade_api.container import Container
+from dataspot_facade_api.routers import auth_router, example_router
 
 
 def create_app() -> FastAPI:
 
+    init_logger(app_name="dataspot-facade-api")
+
     logger: BoundLogger = get_logger("app")
-    logger.info("Starting Text Mate API application")
+    logger.info("Starting Dataspot Facade API application")
+
+    logger.debug("Configuring dependency injection container")
+    container = Container()
+    container.wire(modules=[example_router])
+    container.check_dependencies()
+    logger.debug("Dependency injection configured")
+
+    config = container.config()
+    logger.info(f"Running with configuration: {config}")
 
     app = FastAPI(
         title="Dataspot Facade API",
@@ -28,7 +37,7 @@ def create_app() -> FastAPI:
     logger.debug("Setting up CORS middleware")
     app.add_middleware(
         CORSMiddleware,
-        # allow_origins=[config.client_url],
+        allow_origins=[config.base_url],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -40,6 +49,7 @@ def create_app() -> FastAPI:
 
     logger.debug("Registering API routers")
     api_router.include_router(example_router.create_router())
+    api_router.include_router(auth_router.create_router(config))
     # api_router.include_router(quick_action.create_router())
     # api_router.include_router(word_synonym.create_router())
     # api_router.include_router(sentence_rewrite.create_router())
