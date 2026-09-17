@@ -21,3 +21,12 @@ run = [
     "uv run ruff check --fix",
     "uv run ty check ./src/dataspot_facade_api",
 ]
+
+[tasks.ci-check]
+description = "🧪 Verify lockfile, format code, lint, and type-check without any file modification"
+run = [
+    "uv lock --locked",
+    "uv run ruff format --check",
+    "uv run ruff check",
+    "uv run ty check ./src/text_mate_backend",
+]
