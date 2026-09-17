@@ -31,7 +31,25 @@ WHERE
     r.label = 'Data Steward'
     AND a.id = '{asset_id}'
     AND u.login_id IS NOT NULL
+
+UNION
+
+SELECT DISTINCT
+    u.login_id AS email
+FROM
+    role_view r
+JOIN
+    attributedasset_view a ON a.attributed_as = r.id
+JOIN
+    user_view u ON u.is_person = a.attributed_to
+WHERE
+    r.label = 'Data Steward'
+    AND a.id = '{asset_id}'
+    AND u.login_id IS NOT NULL
 """
+"""Data Stewards can be attributed to an asset either via a Post they hold, or
+directly as a person (attributed_to = the person's own id). Both paths must be
+checked, otherwise direct attributions are silently missed."""
 
 
 class NotAuthorizedError(Exception):
