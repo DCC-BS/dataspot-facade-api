@@ -11,3 +11,13 @@ run = "uv run fastapi dev ./src/dataspot_facade_api/app.py"
 [tasks.auth]
 description = "Authenticate and open API docs with auto-authorization"
 run = "uv run python scripts/auth.py"
+
+[tasks.check]
+description = "🧪 Verify lockfile, format code, lint, and type-check"
+alias = "c"
+run = [
+    "uv lock --locked",
+    "uv run ruff format",
+    "uv run ruff check --fix",
+    "uv run ty check ./src/dataspot_facade_api",
+]

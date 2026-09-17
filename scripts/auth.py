@@ -123,7 +123,9 @@ def main() -> None:
 
     html = build_html_page(token)
 
-    handler = lambda *a, **kw: _DocsHandler(html, *a, **kw)
+    def handler(*a, **kw):
+        return _DocsHandler(html, *a, **kw)
+
     server = HTTPServer(("127.0.0.1", DOCS_SERVER_PORT), handler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()

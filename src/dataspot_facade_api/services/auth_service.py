@@ -30,11 +30,12 @@ class DataspotAuthClient:
         self.client_secret = os.getenv("DATASPOT_CLIENT_SECRET")
         self.token_url = f"https://login.microsoftonline.com/{self.tenant_id}/oauth2/v2.0/token"
         self.dataspot_access_key = os.getenv("DATASPOT_SERVICE_USER_ACCESS_KEY")
-        self.token = None
-        self.token_expires_at = None
+        self.token: str | None = None
+        self.token_expires_at: datetime | None = None
 
     def get_bearer_access_token(self) -> str:
         if self._is_token_valid():
+            assert self.token is not None
             return self.token
 
         data = {

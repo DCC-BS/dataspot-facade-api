@@ -65,3 +65,9 @@ addopts = [
     "--import-mode=importlib",
 ]
 pythonpath = ["src"]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.16.8",
+    "ty>=0.0.81",
+]

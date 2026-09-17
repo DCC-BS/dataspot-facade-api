@@ -86,7 +86,7 @@ def create_app() -> FastAPI:
 
     app = FastAPI(
         title="Dataspot Facade API",
-        description="TODO",
+        description="FastAPI facade service for the Dataspot platform.",
         version="v1",
     )
 
