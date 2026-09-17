@@ -96,7 +96,7 @@ def identify_access_key_owner(access_key: str) -> dict:
 
 
 def main() -> int:
-    ACCESS_KEY = "some-access-key-to-check-ownership-of"
+    ACCESS_KEY = "X6C8hmcbUzY_ANKVtjZ5Nsj9p00GgzJtwYIq33UwKg5zPLQN5KjVg7oyzCzDqHVK"
     result = identify_access_key_owner(ACCESS_KEY)
     print(f"valid: {result['valid']}")
     print(f"email: {result['email']}")

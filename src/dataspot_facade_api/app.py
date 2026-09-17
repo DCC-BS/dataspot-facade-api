@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from structlog.stdlib import BoundLogger
 
 from dataspot_facade_api.container import Container
-from dataspot_facade_api.routers import auth_router, example_router, query_router
+from dataspot_facade_api.routers import auth_router, dataset_router, example_router, query_router
 
 
 def create_app() -> FastAPI:
@@ -57,6 +57,7 @@ def create_app() -> FastAPI:
     api_router.include_router(example_router.create_router())
     api_router.include_router(auth_router.create_router(config))
     api_router.include_router(query_router.create_router(config))
+    api_router.include_router(dataset_router.create_router(container.dataset_service()))
     # api_router.include_router(quick_action.create_router())
     # api_router.include_router(word_synonym.create_router())
     # api_router.include_router(sentence_rewrite.create_router())
