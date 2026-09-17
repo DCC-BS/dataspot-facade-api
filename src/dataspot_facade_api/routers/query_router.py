@@ -1,3 +1,6 @@
+from time import perf_counter
+
+import sentry_sdk
 from dcc_backend_common.logger import get_logger
 from fastapi import APIRouter, Depends, HTTPException, Request
 
@@ -23,16 +26,31 @@ def create_router(config: Configuration) -> APIRouter:
         query: QueryRequest,
         payload: JwtPayload = _jwt_payload_dependency,
     ):
+        start = perf_counter()
+        sentry_sdk.set_tag("user", payload.email)
+        sentry_sdk.set_tag("endpoint", "POST /v1/queries/execute")
+        logger.debug("Query execution started", user=payload.email)
+
         dataspot_auth = DataspotAuthClient()
         query_service = QueryService(config=config, dataspot_auth=dataspot_auth)
 
         try:
-            return query_service.execute_query(query.sql)
+            result = query_service.execute_query(query.sql)
         except HTTPException:
             raise
         except Exception as e:
-            logger.error("Query execution failed: %s", e)
+            sentry_sdk.capture_exception(e)
+            logger.error("Query execution failed", error=str(e), user=payload.email)
             raise HTTPException(status_code=502, detail=f"Query API request failed: {e}") from e
+
+        elapsed_ms = round((perf_counter() - start) * 1000, 2)
+        sentry_sdk.set_tag("query_duration_ms", elapsed_ms)
+        logger.info(
+            "Query executed successfully",
+            duration_ms=elapsed_ms,
+            user=payload.email,
+        )
+        return result
 
     logger.debug("Query router configured")
     return router

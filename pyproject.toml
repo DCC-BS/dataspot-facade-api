@@ -9,6 +9,7 @@ dependencies = [
     "dependency-injector>=4.49.1",
     "fastapi[standard]>=0.141.1",
     "pyjwt>=2.14.0",
+    "sentry-sdk[fastapi]>=2.0",
 ]
 
 [build-system]
