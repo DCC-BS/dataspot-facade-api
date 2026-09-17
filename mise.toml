@@ -28,5 +28,5 @@ run = [
     "uv lock --locked",
     "uv run ruff format --check",
     "uv run ruff check",
-    "uv run ty check ./src/text_mate_backend",
+    "uv run ty check ./src/dataspot_facade_api",
 ]
