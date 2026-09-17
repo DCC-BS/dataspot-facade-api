@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from dataspot_facade_api.dependencies import get_jwt_payload
 from dataspot_facade_api.models.dataset import UpdateLastUpdateRequest, UpdateLastUpdateResponse
+from dataspot_facade_api.services.authorization_service import DatasetAuthorizationService, NotAuthorizedError
 from dataspot_facade_api.services.dataset_service import (
     DatasetNotFoundError,
     DatasetService,
@@ -17,7 +18,7 @@ logger = get_logger("dataset_router")
 _jwt_payload_dependency = Depends(get_jwt_payload)
 
 
-def create_router(dataset_service: DatasetService) -> APIRouter:
+def create_router(dataset_service: DatasetService, authorization_service: DatasetAuthorizationService) -> APIRouter:
     logger.debug("Creating dataset router")
     router = APIRouter(prefix="/datasets", tags=["datasets"])
 
@@ -26,15 +27,22 @@ def create_router(dataset_service: DatasetService) -> APIRouter:
         summary="Update dataset lastUpdate",
         description=(
             "Updates the Dataspot dataset customProperties.lastUpdate field. "
-            "Requires a valid facade JWT. Dataspot writes use the configured service user."
+            "Requires a valid facade JWT. The caller must hold the "
+            "'Feld eines Assets als Data Steward aktualisieren' facade-API permission "
+            "and be a Data Steward of the target dataset. Dataspot writes use the configured service user."
         ),
         response_model=UpdateLastUpdateResponse,
     )
     async def update_last_update(
         dataset_id: UUID,
         request: UpdateLastUpdateRequest,
-        _payload: JwtPayload = _jwt_payload_dependency,
+        payload: JwtPayload = _jwt_payload_dependency,
     ) -> UpdateLastUpdateResponse:
+        try:
+            await authorization_service.ensure_can_update_last_update(dataset_id, payload)
+        except NotAuthorizedError as exc:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
+
         try:
             return await dataset_service.update_last_update(dataset_id, request.last_update)
         except DatasetNotFoundError as exc:

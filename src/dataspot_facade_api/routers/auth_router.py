@@ -24,6 +24,7 @@ def create_router(config: Configuration) -> APIRouter:
         token = AuthService.create_jwt(
             user_id=user_info.user_id,
             email=user_info.email,
+            person_id=user_info.person_id,
             secret=config.jwt_secret,
             algorithm=config.jwt_algorithm,
             expires_in_seconds=config.jwt_expires_in_seconds,

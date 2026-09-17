@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 class UserInfo:
     user_id: str
     email: str
+    person_id: str
 
 
 class DataspotAuthClient:
@@ -86,11 +87,17 @@ class AuthService:
         if email is None:
             return None
 
-        user_id = self._lookup_user_id(email)
-        if user_id is None:
+        user = self._lookup_user(email)
+        if user is None:
             return None
 
-        return UserInfo(user_id=user_id, email=email)
+        user_id = user.get("id")
+        person_id = user.get("isPerson")
+        if not user_id or not person_id:
+            logger.error("User record for %s is missing id or isPerson", email)
+            return None
+
+        return UserInfo(user_id=user_id, email=email, person_id=person_id)
 
     def _validate_access_key(self, access_key: str) -> str | None:
         probe_headers = self._probe_headers(access_key)
@@ -141,7 +148,7 @@ class AuthService:
 
         return email
 
-    def _lookup_user_id(self, email: str) -> str | None:
+    def _lookup_user(self, email: str) -> dict | None:
         headers = self._dataspot_auth.get_service_headers()
         response = requests.get(
             f"{self._base_url()}/users",
@@ -151,7 +158,7 @@ class AuthService:
         )
 
         if response.status_code != 200:
-            logger.error("Failed to look up user ID for %s (status %s)", email, response.status_code)
+            logger.error("Failed to look up user for %s (status %s)", email, response.status_code)
             return None
 
         data = response.json()
@@ -168,14 +175,15 @@ class AuthService:
 
         for user in users:
             if user.get("loginId") == email:
-                return user.get("id")
+                return user
 
-        return users[0].get("id")
+        return users[0]
 
     @staticmethod
     def create_jwt(
         user_id: str,
         email: str,
+        person_id: str,
         secret: str,
         algorithm: str = "HS256",
         expires_in_seconds: int = 3600,
@@ -184,6 +192,7 @@ class AuthService:
         payload = {
             "sub": user_id,
             "email": email,
+            "person_id": person_id,
             "iat": now,
             "exp": now + timedelta(seconds=expires_in_seconds),
         }
