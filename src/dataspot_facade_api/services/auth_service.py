@@ -1,4 +1,3 @@
-import logging
 import os
 import secrets
 from dataclasses import dataclass
@@ -6,13 +5,14 @@ from datetime import datetime, timedelta, timezone
 
 import jwt
 import requests
+from dcc_backend_common.logger import get_logger
 from dotenv import load_dotenv
 
 from dataspot_facade_api.app_config import Configuration
 
 load_dotenv()
 
-logger = logging.getLogger(__name__)
+logger = get_logger("auth_service")
 
 
 @dataclass
@@ -101,15 +101,15 @@ class AuthService:
         )
 
         if response.status_code == 401:
-            logger.info("Access key validation failed (401)")
+            logger.debug("Access key validation rejected by Dataspot (401)")
             return None
 
         if response.status_code == 500 and "Last unit does not have enough valid bits" in response.text:
-            logger.info("Access key is malformed")
+            logger.debug("Access key is malformed")
             return None
 
         if response.status_code != 200:
-            logger.error("Unexpected validation status %s", response.status_code)
+            logger.error("Unexpected Dataspot validation status", status_code=response.status_code)
             return None
 
         tag_name = f"TMP_ACCESS_KEY_OWNER_PROBE_{secrets.token_urlsafe(32)}"
@@ -121,7 +121,10 @@ class AuthService:
         )
 
         if create_response.status_code not in (200, 201):
-            logger.error("Failed to create temporary tag (%s)", create_response.status_code)
+            logger.error(
+                "Failed to create temporary tag",
+                status_code=create_response.status_code,
+            )
             return None
 
         created = create_response.json()
@@ -139,6 +142,7 @@ class AuthService:
             logger.error("Temporary tag created but createdBy was missing")
             return None
 
+        logger.debug("Access key owner identified via probe tag", email=email)
         return email
 
     def _lookup_user_id(self, email: str) -> str | None:
@@ -151,7 +155,11 @@ class AuthService:
         )
 
         if response.status_code != 200:
-            logger.error("Failed to look up user ID for %s (status %s)", email, response.status_code)
+            logger.error(
+                "Failed to look up user ID in Dataspot",
+                email=email,
+                status_code=response.status_code,
+            )
             return None
 
         data = response.json()
@@ -163,7 +171,7 @@ class AuthService:
                 break
 
         if not users:
-            logger.error("No users found in response for email %s", email)
+            logger.error("No Dataspot users found for email", email=email)
             return None
 
         for user in users:
