@@ -1,10 +1,12 @@
+import os
+
 from dcc_backend_common.logger import get_logger, init_logger
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from structlog.stdlib import BoundLogger
 
 from dataspot_facade_api.container import Container
-from dataspot_facade_api.routers import auth_router, example_router
+from dataspot_facade_api.routers import auth_router, example_router, query_router
 
 
 def create_app() -> FastAPI:
@@ -35,9 +37,13 @@ def create_app() -> FastAPI:
     # app.include_router(health_probe_router(service_dependencies))
 
     logger.debug("Setting up CORS middleware")
+    is_prod = os.environ.get("IS_PROD", "false").lower() == "true"
+    origins = [config.base_url]
+    if not is_prod:
+        origins.append("http://127.0.0.1:8090")
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[config.base_url],
+        allow_origins=origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -50,6 +56,7 @@ def create_app() -> FastAPI:
     logger.debug("Registering API routers")
     api_router.include_router(example_router.create_router())
     api_router.include_router(auth_router.create_router(config))
+    api_router.include_router(query_router.create_router(config))
     # api_router.include_router(quick_action.create_router())
     # api_router.include_router(word_synonym.create_router())
     # api_router.include_router(sentence_rewrite.create_router())
