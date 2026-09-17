@@ -338,6 +338,7 @@ dependencies = [
     { name = "fastapi", extra = ["standard"] },
     { name = "pyjwt" },
     { name = "sentry-sdk", extra = ["fastapi"] },
+    { name = "uvicorn" },
 ]
 
 [package.dev-dependencies]
@@ -353,6 +354,7 @@ requires-dist = [
     { name = "fastapi", extras = ["standard"], specifier = ">=0.141.1" },
     { name = "pyjwt", specifier = ">=2.14.0" },
     { name = "sentry-sdk", extras = ["fastapi"], specifier = ">=2.0" },
+    { name = "uvicorn", specifier = ">=0.53.0" },
 ]
 
 [package.metadata.requires-dev]

@@ -37,8 +37,9 @@ class FacadeClient:
             self._refresh_token()
 
         def run_request():
-            return self._client.post("/queries/execute", json={"sql": sql},
-                                                headers={"Authorization": f"Bearer {self.token}"})
+            return self._client.post(
+                "/queries/execute", json={"sql": sql}, headers={"Authorization": f"Bearer {self.token}"}
+            )
 
         response = run_request()
 
@@ -53,7 +54,9 @@ class FacadeClient:
 
 def main():
     parser = argparse.ArgumentParser(description="Call the facade API, refreshing the JWT on a 401")
-    parser.add_argument("--base-url", default="http://127.0.0.1:8000", help="Base host of the facade API, e.g. http://127.0.0.1:8000")
+    parser.add_argument(
+        "--base-url", default="http://127.0.0.1:8000", help="Base host of the facade API, e.g. http://127.0.0.1:8000"
+    )
     parser.add_argument("--access-key", required=True, help="Dataspot access key used to obtain a JWT")
     args = parser.parse_args()
 
