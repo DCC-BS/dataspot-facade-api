@@ -1,8 +1,10 @@
 from uuid import UUID
 
 from dcc_backend_common.logger import get_logger
+from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from dataspot_facade_api.container import Container
 from dataspot_facade_api.dependencies import get_jwt_payload
 from dataspot_facade_api.models.dataset import UpdateLastUpdateRequest, UpdateLastUpdateResponse
 from dataspot_facade_api.services.authorization_service import DatasetAuthorizationService, NotAuthorizedError
@@ -11,14 +13,18 @@ from dataspot_facade_api.services.dataset_service import (
     DatasetService,
     DatasetUpdateError,
 )
-from dataspot_facade_api.utils.jwt_utils import JwtPayload
+from dataspot_facade_api.services.utils.jwt_utils import JwtPayload
 
 logger = get_logger("dataset_router")
 
 _jwt_payload_dependency = Depends(get_jwt_payload)
 
 
-def create_router(dataset_service: DatasetService, authorization_service: DatasetAuthorizationService) -> APIRouter:
+@inject
+def create_router(
+    dataset_service: DatasetService = Provide[Container.dataset_service],
+    authorization_service: DatasetAuthorizationService = Provide[Container.dataset_authorization_service],
+) -> APIRouter:
     logger.debug("Creating dataset router")
     router = APIRouter(prefix="/datasets", tags=["datasets"])
 
@@ -27,11 +33,18 @@ def create_router(dataset_service: DatasetService, authorization_service: Datase
         summary="Update dataset lastUpdate",
         description=(
             "Updates the Dataspot dataset customProperties.lastUpdate field. "
-            "Requires a valid facade JWT. The caller must hold the "
+            "Requires a valid facade JWT (Bearer token). The caller must hold the "
             "'Feld eines Assets als Data Steward aktualisieren' facade-API permission "
             "and be a Data Steward of the target dataset. Dataspot writes use the configured service user."
         ),
         response_model=UpdateLastUpdateResponse,
+        responses={
+            200: {"description": "Dataset lastUpdate successfully updated"},
+            401: {"description": "Missing or invalid JWT"},
+            403: {"description": "Caller is not authorized (permission/Data Steward)"},
+            404: {"description": "Dataset not found"},
+            502: {"description": "Dataspot write failed"},
+        },
     )
     async def update_last_update(
         dataset_id: UUID,

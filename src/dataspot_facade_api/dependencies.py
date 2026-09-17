@@ -3,7 +3,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from dataspot_facade_api.app_config import Configuration
 from dataspot_facade_api.container import Container
-from dataspot_facade_api.utils.jwt_utils import JwtPayload, validate_jwt
+from dataspot_facade_api.services.utils.jwt_utils import JwtPayload, validate_jwt
 
 _bearer_scheme = HTTPBearer()
 _config_dependency = Depends(lambda: Container().config())

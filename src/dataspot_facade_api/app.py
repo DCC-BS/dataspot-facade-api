@@ -12,7 +12,7 @@ from sentry_sdk.integrations.starlette import StarletteIntegration
 from structlog.stdlib import BoundLogger
 
 from dataspot_facade_api.container import Container
-from dataspot_facade_api.routers import auth_router, dataset_router, example_router, query_router
+from dataspot_facade_api.routers import auth_router, dataset_router, query_router
 
 
 def _build_trace_context(request: Request) -> dict:
@@ -73,7 +73,13 @@ def create_app() -> FastAPI:
     debug_enabled = os.environ.get("RUSTRAK_DEBUG", "false").lower() == "true"
     logger.debug("Configuring dependency injection container")
     container = Container()
-    container.wire(modules=[example_router])
+    container.wire(
+        modules=[
+            auth_router,
+            query_router,
+            dataset_router,
+        ]
+    )
     container.check_dependencies()
     logger.debug("Dependency injection configured", container_ok=True)
 
@@ -124,12 +130,9 @@ def create_app() -> FastAPI:
         return response
 
     logger.debug("Registering API routers")
-    api_router.include_router(example_router.create_router())
-    api_router.include_router(auth_router.create_router(config))
-    api_router.include_router(query_router.create_router(config, container.query_authorization_service()))
-    api_router.include_router(
-        dataset_router.create_router(container.dataset_service(), container.dataset_authorization_service())
-    )
+    api_router.include_router(auth_router.create_router())
+    api_router.include_router(query_router.create_router())
+    api_router.include_router(dataset_router.create_router())
     logger.debug("All routers registered")
     app.include_router(api_router)
 

@@ -5,7 +5,7 @@ from dcc_backend_common.logger import get_logger
 
 from dataspot_facade_api.app_config import Configuration
 from dataspot_facade_api.services.auth_service import DataspotAuthClient
-from dataspot_facade_api.utils.jwt_utils import JwtPayload
+from dataspot_facade_api.services.utils.jwt_utils import JwtPayload
 
 logger = get_logger("authorization_service")
 
