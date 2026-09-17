@@ -11,6 +11,7 @@ from dataspot_facade_api.app_config import Configuration
 class JwtPayload:
     user_id: str
     email: str
+    person_id: str
     issued_at: datetime | None
     expires_at: datetime | None
 
@@ -23,9 +24,10 @@ def validate_jwt(token: str, config: Configuration) -> JwtPayload:
 
     user_id = decoded.get("sub")
     email = decoded.get("email")
+    person_id = decoded.get("person_id")
 
-    if user_id is None or email is None:
-        raise ValueError("JWT token is missing required claims (sub, email)")
+    if user_id is None or email is None or person_id is None:
+        raise ValueError("JWT token is missing required claims (sub, email, person_id)")
 
     issued_at = None
     if "iat" in decoded:
@@ -38,6 +40,7 @@ def validate_jwt(token: str, config: Configuration) -> JwtPayload:
     return JwtPayload(
         user_id=user_id,
         email=email,
+        person_id=person_id,
         issued_at=issued_at,
         expires_at=expires_at,
     )
