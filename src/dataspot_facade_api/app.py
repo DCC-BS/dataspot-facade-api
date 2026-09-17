@@ -12,7 +12,7 @@ from sentry_sdk.integrations.starlette import StarletteIntegration
 from structlog.stdlib import BoundLogger
 
 from dataspot_facade_api.container import Container
-from dataspot_facade_api.routers import auth_router, example_router, query_router
+from dataspot_facade_api.routers import auth_router, dataset_router, example_router, query_router
 
 
 def _build_trace_context(request: Request) -> dict:
@@ -127,6 +127,7 @@ def create_app() -> FastAPI:
     api_router.include_router(example_router.create_router())
     api_router.include_router(auth_router.create_router(config))
     api_router.include_router(query_router.create_router(config))
+    api_router.include_router(dataset_router.create_router(container.dataset_service()))
     logger.debug("All routers registered")
     app.include_router(api_router)
 
