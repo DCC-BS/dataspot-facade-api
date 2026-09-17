@@ -6,11 +6,13 @@ import sys
 
 import requests
 
-import config
-from src.dataspot_auth import DataspotAuth
+from tools.dataspot_auth import DataspotAuth
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
+class config:
+    base_url = "https://datenkatalog.bs.ch"
+    database_name = "wonderfull"
 
 def _headers_for_access_key(auth: DataspotAuth, access_key: str) -> dict:
     return {
