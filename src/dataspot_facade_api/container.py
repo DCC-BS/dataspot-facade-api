@@ -1,8 +1,8 @@
 from dependency_injector import containers, providers
 
 from dataspot_facade_api.app_config import Configuration
-from dataspot_facade_api.services.authorization_service import DatasetAuthorizationService, QueryAuthorizationService
 from dataspot_facade_api.services.auth_service import AuthService, DataspotAuthClient
+from dataspot_facade_api.services.authorization_service import DatasetAuthorizationService, QueryAuthorizationService
 from dataspot_facade_api.services.dataset_service import DatasetService
 from dataspot_facade_api.services.query_service import QueryService
 

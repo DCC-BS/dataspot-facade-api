@@ -9,7 +9,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from dataspot_facade_api.container import Container
 from dataspot_facade_api.dependencies import get_jwt_payload
 from dataspot_facade_api.models.query import QueryRequest
-from dataspot_facade_api.services.auth_service import DataspotAuthClient
 from dataspot_facade_api.services.authorization_service import NotAuthorizedError, QueryAuthorizationService
 from dataspot_facade_api.services.query_service import QueryService
 from dataspot_facade_api.services.utils.jwt_utils import JwtPayload
@@ -22,7 +21,7 @@ _jwt_payload_dependency = Depends(get_jwt_payload)
 @inject
 def create_router(
     query_service: QueryService = Provide[Container.query_service],
-    authorization_service: QueryAuthorizationService = Provide[Container.authorization_service]
+    authorization_service: QueryAuthorizationService = Provide[Container.query_authorization_service],
 ) -> APIRouter:
     logger.debug("Creating query router")
     router: APIRouter = APIRouter(prefix="/queries", tags=["queries"])
@@ -44,7 +43,7 @@ def create_router(
             502: {"description": "Dataspot Query API request failed"},
         },
     )
-    def execute_query(
+    async def execute_query(
         request: Request,
         query: QueryRequest,
         payload: JwtPayload = _jwt_payload_dependency,
@@ -59,9 +58,6 @@ def create_router(
         except NotAuthorizedError as exc:
             logger.info("Query execution denied", user=payload.email, reason=str(exc))
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
-
-        dataspot_auth = DataspotAuthClient()
-        query_service = QueryService(config=config, dataspot_auth=dataspot_auth)
 
         try:
             result = await asyncio.to_thread(query_service.execute_query, query.sql)

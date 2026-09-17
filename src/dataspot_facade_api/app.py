@@ -25,7 +25,6 @@ def _build_trace_context(request: Request) -> dict:
 
 
 def create_app() -> FastAPI:
-
     # RUSTRAK_DEBUG=true turns on the app's debug log lines by raising LOG_LEVEL
     # to DEBUG before the logging pipeline is initialized below.
     if os.environ.get("RUSTRAK_DEBUG", "false").lower() == "true":
