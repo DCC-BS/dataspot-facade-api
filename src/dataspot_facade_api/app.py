@@ -34,6 +34,14 @@ def create_app() -> FastAPI:
 
     logger: BoundLogger = get_logger("app")
 
+    # Mount the app under a base path, e.g. /fade-api. Starlette strips the
+    # root_path prefix from incoming requests before matching routes, so this
+    # covers both proxy styles: one that strips /fade-api before forwarding
+    # (with the prefix reaching the app via `uvicorn --root-path /fade-api` or
+    # the proxy's forwarded scope) and one that forwards /fade-api/... as-is.
+    base_path = os.environ.get("BASE_PATH", "").rstrip("/")
+    root_path = os.environ.get("ROOT_PATH", base_path).rstrip("/")
+
     dsn = os.environ.get("RUSTRAK_DSN")
     if dsn:
         # Level at which app log records are forwarded to Rustrak's Logs.
@@ -85,7 +93,7 @@ def create_app() -> FastAPI:
     config = container.config()
     logger.info(
         "Running with configuration",
-        base_url=config.base_url,
+        base_url=config.dataspot_base_url,
         database_name=config.database_name,
     )
 
@@ -93,6 +101,7 @@ def create_app() -> FastAPI:
         title="Dataspot Facade API",
         description="FastAPI facade service for the Dataspot platform.",
         version="v1",
+        root_path=root_path,
     )
 
     api_prefix = "/v1"
@@ -102,7 +111,7 @@ def create_app() -> FastAPI:
 
     logger.debug("Setting up CORS middleware")
     is_prod = os.environ.get("IS_PROD", "false").lower() == "true"
-    origins = [config.base_url]
+    origins = [config.dataspot_base_url]
     if not is_prod:
         origins.append("http://127.0.0.1:8090")
     app.add_middleware(
@@ -135,7 +144,7 @@ def create_app() -> FastAPI:
     logger.debug("All routers registered")
     app.include_router(api_router)
 
-    logger.info("API setup complete", debug_enabled=debug_enabled)
+    logger.info("API setup complete", debug_enabled=debug_enabled, base_path=base_path or "/")
     return app
 
 

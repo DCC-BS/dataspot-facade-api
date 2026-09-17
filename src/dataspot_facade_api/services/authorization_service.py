@@ -67,10 +67,10 @@ class DatasetAuthorizationService:
         self._dataspot_auth = dataspot_auth
 
     def _rest_base_url(self) -> str:
-        return f"{self._config.base_url}/rest/{self._config.database_name}"
+        return f"{self._config.dataspot_base_url}/rest/{self._config.database_name}"
 
     def _query_url(self) -> str:
-        return f"{self._config.base_url}/api/{self._config.database_name}/queries/download?format=JSON"
+        return f"{self._config.dataspot_base_url}/api/{self._config.database_name}/queries/download?format=JSON"
 
     async def ensure_can_update_last_update(self, dataset_id: UUID, payload: JwtPayload) -> None:
         """Raise NotAuthorizedError unless the user holds the facade-API permission
@@ -113,7 +113,7 @@ class QueryAuthorizationService:
         self._dataspot_auth = dataspot_auth
 
     def _rest_base_url(self) -> str:
-        return f"{self._config.base_url}/rest/{self._config.database_name}"
+        return f"{self._config.dataspot_base_url}/rest/{self._config.database_name}"
 
     async def ensure_can_execute_query(self, payload: JwtPayload) -> None:
         """Raise NotAuthorizedError unless the user holds the 'Query-Befehle' facade-API permission."""

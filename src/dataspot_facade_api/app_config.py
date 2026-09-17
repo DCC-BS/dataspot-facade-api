@@ -5,7 +5,9 @@ from pydantic import Field
 
 
 class Configuration(AbstractAppConfig):
-    base_url: str = Field(description="The base URL of the Dataspot instance", default="https://datenkatalog.bs.ch")
+    dataspot_base_url: str = Field(
+        description="The base URL of the Dataspot instance", default="https://datenkatalog.bs.ch"
+    )
     database_name: str = Field(description="The name of the database", default="wonderfull")
     jwt_secret: str = Field(description="Secret key for signing JWT tokens")
     jwt_algorithm: str = Field(description="Algorithm for signing JWT tokens", default="HS256")
@@ -15,7 +17,7 @@ class Configuration(AbstractAppConfig):
     @override
     def from_env(cls) -> "Configuration":
         return cls(
-            base_url=get_env_or_throw("BASE_URL"),
+            dataspot_base_url=get_env_or_throw("BASE_URL"),
             database_name=get_env_or_throw("DATABASE_NAME"),
             jwt_secret=get_env_or_throw("JWT_SECRET"),
         )
@@ -24,7 +26,7 @@ class Configuration(AbstractAppConfig):
     def __str__(self) -> str:
         return f"""
         Configuration(
-            base_url={self.base_url},
+            dataspot_base_url={self.dataspot_base_url},
             database_name={self.database_name}
         )
         """

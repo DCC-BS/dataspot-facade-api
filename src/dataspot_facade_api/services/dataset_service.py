@@ -31,7 +31,7 @@ class DatasetService:
         self._dataspot_auth = dataspot_auth
 
     def _dataset_url(self, dataset_id: UUID) -> str:
-        return f"{self._config.base_url}/rest/{self._config.database_name}/datasets/{dataset_id}"
+        return f"{self._config.dataspot_base_url}/rest/{self._config.database_name}/datasets/{dataset_id}"
 
     @staticmethod
     def _to_epoch_ms(value: datetime) -> int:

@@ -15,7 +15,7 @@ class QueryService:
         self._dataspot_auth = dataspot_auth
 
     def execute_query(self, sql: str):
-        url = f"{self._config.base_url}/api/{self._config.database_name}/queries/download?format=JSON"
+        url = f"{self._config.dataspot_base_url}/api/{self._config.database_name}/queries/download?format=JSON"
         logger.debug("Executing query against Dataspot Query API", url=url)
 
         start = perf_counter()

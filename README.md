@@ -67,6 +67,48 @@ reports four things to the Rustrak dashboard:
 > In production set `RUSTRAK_PUBLIC_URL` to your public host so SDKs get a
 > reachable DSN.
 
+## Running behind a reverse proxy with base paths
+
+### The facade API under a sub-path
+
+Set `BASE_PATH` (e.g. `/fade-api`) in `.env` and the API serves its routes,
+docs and OpenAPI schema under that prefix:
+
+```nginx
+# nginx: forward the prefix untouched — no extra config needed
+location /fade-api/ {
+    proxy_pass http://app:8000;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+```
+
+If your proxy strips the prefix instead (e.g. `proxy_pass
+http://app:8000/v1/`), either start uvicorn with `--root-path /fade-api` or
+set `ROOT_PATH=/fade-api` so generated doc URLs still carry the prefix.
+
+### Rustrak cannot run under a sub-path
+
+The Rustrak dashboard is a SPA served from the root of its origin (`base: '/'`
+in its Vite build, `/` router basepath) and the server has no base-path
+setting. Give it its own hostname at the root:
+
+```nginx
+server {
+    server_name rustrak.example.com;
+    location / {
+        proxy_pass http://rustrak:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+Set `RUSTRAK_PUBLIC_URL=https://rustrak.example.com` (and
+`DASHBOARD_URL=https://rustrak.example.com` for alert links) and
+`SSL_PROXY=true` behind HTTPS. The facade API and Rustrak can then share one
+host: this API on `/fade-api`, the Rustrak dashboard at `/`.
+
 ## Environment variables
 
 Copy the example env file and fill in the values:
@@ -81,6 +123,8 @@ cp .env.example .env
 | `JWT_SECRET` | yes | Secret key for signing JWT tokens |
 | `BASE_URL` | yes | Base URL of the Dataspot instance |
 | `DATABASE_NAME` | yes | Database name in Dataspot |
+| `BASE_PATH` | no | Base path the API is served under, e.g. `/fade-api` behind a reverse proxy. Defaults to empty (served at the root) |
+| `ROOT_PATH` | no | ASGI `root_path` for when the proxy strips the prefix and uvicorn is not started with `--root-path`. Defaults to `BASE_PATH` |
 | `IS_PROD` | no | Set to `"true"` to enable production mode (disables local CORS origins). Defaults to `"false"` |
 | `DATASPOT_SERVICE_USER_ACCESS_KEY` | no | Backend service-user access key |
 | `DATASPOT_TENANT_ID` | no | Azure AD / Entra ID tenant ID |

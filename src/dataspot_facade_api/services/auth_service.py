@@ -73,7 +73,7 @@ class AuthService:
         self._dataspot_auth = dataspot_auth
 
     def _base_url(self) -> str:
-        return f"{self._config.base_url}/rest/{self._config.database_name}"
+        return f"{self._config.dataspot_base_url}/rest/{self._config.database_name}"
 
     def _probe_headers(self, access_key: str) -> dict:
         return {
