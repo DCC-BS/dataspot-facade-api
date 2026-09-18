@@ -1,3 +1,4 @@
+import logging
 import os
 import secrets
 from dataclasses import dataclass
@@ -5,14 +6,13 @@ from datetime import datetime, timedelta, timezone
 
 import jwt
 import requests
-from dcc_backend_common.logger import get_logger
 from dotenv import load_dotenv
 
 from dataspot_facade_api.app_config import Configuration
 
 load_dotenv()
 
-logger = get_logger("auth_service")
+logger = logging.getLogger("dataspot_facade_api.auth_service")
 
 
 @dataclass
@@ -117,7 +117,7 @@ class AuthService:
             return None
 
         if response.status_code != 200:
-            logger.error("Unexpected Dataspot validation status", status_code=response.status_code)
+            logger.error("Unexpected Dataspot validation status status_code=%s", response.status_code)
             return None
 
         tag_name = f"TMP_ACCESS_KEY_OWNER_PROBE_{secrets.token_urlsafe(32)}"
@@ -130,8 +130,8 @@ class AuthService:
 
         if create_response.status_code not in (200, 201):
             logger.error(
-                "Failed to create temporary tag",
-                status_code=create_response.status_code,
+                "Failed to create temporary tag status_code=%s",
+                create_response.status_code,
             )
             return None
 
@@ -150,7 +150,7 @@ class AuthService:
             logger.error("Temporary tag created but createdBy was missing")
             return None
 
-        logger.debug("Access key owner identified via probe tag", email=email)
+        logger.debug("Access key owner identified via probe tag email=%s", email)
         return email
 
     def _lookup_user(self, email: str) -> dict | None:
@@ -164,9 +164,9 @@ class AuthService:
 
         if response.status_code != 200:
             logger.error(
-                "Failed to look up user ID in Dataspot",
-                email=email,
-                status_code=response.status_code,
+                "Failed to look up user ID in Dataspot email=%s status_code=%s",
+                email,
+                response.status_code,
             )
             return None
 
@@ -179,7 +179,7 @@ class AuthService:
                 break
 
         if not users:
-            logger.error("No Dataspot users found for email", email=email)
+            logger.error("No Dataspot users found for email email=%s", email)
             return None
 
         for user in users:

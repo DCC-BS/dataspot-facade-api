@@ -1,6 +1,6 @@
+import logging
 from uuid import UUID
 
-from dcc_backend_common.logger import get_logger
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, status
 
@@ -15,7 +15,7 @@ from dataspot_facade_api.services.dataset_service import (
 )
 from dataspot_facade_api.services.utils.jwt_utils import JwtPayload
 
-logger = get_logger("dataset_router")
+logger = logging.getLogger("dataspot_facade_api.dataset_router")
 
 _jwt_payload_dependency = Depends(get_jwt_payload)
 
@@ -51,9 +51,11 @@ def create_router(
         request: UpdateLastUpdateRequest,
         payload: JwtPayload = _jwt_payload_dependency,
     ) -> UpdateLastUpdateResponse:
+        logger.info("Updating dataset lastUpdate user=%s dataset_id=%s", payload.email, dataset_id)
         try:
             await authorization_service.ensure_can_update_last_update(dataset_id, payload)
         except NotAuthorizedError as exc:
+            logger.warning("Dataset lastUpdate denied user=%s dataset_id=%s reason=%s", payload.email, dataset_id, exc)
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
 
         try:

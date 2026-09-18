@@ -30,3 +30,12 @@ run = [
     "uv run ruff check",
     "uv run ty check ./src/dataspot_facade_api",
 ]
+
+[tasks."docker:up"]
+run = "docker compose up -d"
+
+[tasks."docker:down"]
+run = "docker compose down"
+
+[tasks."docker:logs"]
+run = "docker compose logs --follow"

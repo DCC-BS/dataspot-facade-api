@@ -1,4 +1,5 @@
-from dcc_backend_common.logger import get_logger
+import logging
+
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, HTTPException
 
@@ -7,7 +8,7 @@ from dataspot_facade_api.container import Container
 from dataspot_facade_api.models.auth import AuthRequest, AuthResponse
 from dataspot_facade_api.services.auth_service import AuthService
 
-logger = get_logger("auth_router")
+logger = logging.getLogger("dataspot_facade_api.auth_router")
 
 
 @inject
@@ -47,7 +48,7 @@ def create_router(
             algorithm=config.jwt_algorithm,
             expires_in_seconds=config.jwt_expires_in_seconds,
         )
-        logger.info("User authenticated", user=user_info.email)
+        logger.info("User authenticated user=%s", user_info.email)
         return AuthResponse(access_token=token)
 
     logger.debug("Auth router configured")

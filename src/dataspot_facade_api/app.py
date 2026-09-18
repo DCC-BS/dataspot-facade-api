@@ -1,27 +1,18 @@
 import logging
 import os
-from time import perf_counter
 
 import sentry_sdk
-from dcc_backend_common.logger import get_logger, init_logger
-from fastapi import APIRouter, FastAPI, Request
+from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 from sentry_sdk.integrations.logging import LoggingIntegration
 from sentry_sdk.integrations.starlette import StarletteIntegration
-from structlog.stdlib import BoundLogger
 
 from dataspot_facade_api.container import Container
+from dataspot_facade_api.logging_config import setup_logging
 from dataspot_facade_api.routers import auth_router, dataset_router, query_router
 
-
-def _build_trace_context(request: Request) -> dict:
-    """Gather a slice of request metadata for debug/trace log lines."""
-    return {
-        "method": request.method,
-        "path": request.url.path,
-        "client_host": request.client.host if request.client else None,
-    }
+logger = logging.getLogger("dataspot_facade_api.app")
 
 
 def create_app() -> FastAPI:
@@ -30,9 +21,7 @@ def create_app() -> FastAPI:
     if os.environ.get("RUSTRAK_DEBUG", "false").lower() == "true":
         os.environ.setdefault("LOG_LEVEL", "DEBUG")
 
-    init_logger(app_name="dataspot-facade-api")
-
-    logger: BoundLogger = get_logger("app")
+    setup_logging()
 
     # Mount the app under a base path, e.g. /fade-api. Starlette strips the
     # root_path prefix from incoming requests before matching routes, so this
@@ -67,9 +56,9 @@ def create_app() -> FastAPI:
             _experiments={"enable_logs": True},
         )
         logger.info(
-            "Sentry/Rustrak initialized",
-            event_level=rustrak_event_level,
-            log_level=rustrak_log_level,
+            "Sentry/Rustrak initialized event_level=%s log_level=%s",
+            rustrak_event_level,
+            rustrak_log_level,
         )
     else:
         logger.warning("RUSTRAK_DSN not set; error tracking and performance disabled")
@@ -88,18 +77,39 @@ def create_app() -> FastAPI:
         ]
     )
     container.check_dependencies()
-    logger.debug("Dependency injection configured", container_ok=True)
+    logger.debug("Dependency injection configured container_ok=True")
 
     config = container.config()
     logger.info(
-        "Running with configuration",
-        base_url=config.dataspot_base_url,
-        database_name=config.database_name,
+        "Running with configuration base_url=%s database_name=%s",
+        config.dataspot_base_url,
+        config.database_name,
     )
 
     app = FastAPI(
         title="Dataspot Facade API",
-        description="FastAPI facade service for the Dataspot platform.",
+        description=(
+            "FastAPI facade service for the Dataspot platform.\n\n"
+            "The source code and additional documentation are available at "
+            "https://github.com/DCC-BS/dataspot-facade-api; working examples "
+            "for all endpoints can be found under "
+            "https://github.com/DCC-BS/dataspot-facade-api/tree/main/examples.\n\n"
+            "## Authentication\n"
+            "This API is not addressed directly with Dataspot credentials. Instead, a "
+            "Dataspot access key is exchanged for a short-lived JWT that is used for "
+            "all subsequent calls:\n\n"
+            "1. Obtain a Dataspot access key (a personal access key from the Dataspot "
+            "platform).\n"
+            "2. Send it to `POST /v1/auth` to validate the key and identify the "
+            "associated user.\n"
+            "3. On success, the endpoint returns a signed JWT (HS256 by default) that "
+            "is **valid for 1 hour** (`jwt_expires_in_seconds=3600`).\n"
+            "4. Send the JWT on every protected request as the `Authorization` header: "
+            "`Bearer <access_token>`. When it expires, repeat the exchange with the "
+            "access key to get a new JWT.\n\n"
+            "All protected endpoints rely on the claims of this JWT (user id, email, "
+            "person id) for authorization."
+        ),
         version="v1",
         root_path=root_path,
     )
@@ -122,21 +132,6 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    @app.middleware("http")
-    async def trace_requests(request: Request, call_next):
-        ctx = _build_trace_context(request)
-        start = perf_counter()
-        logger.debug("Incoming request", **ctx)
-        response = await call_next(request)
-        elapsed_ms = round((perf_counter() - start) * 1000, 2)
-        logger.info(
-            "Request finished",
-            status_code=response.status_code,
-            duration_ms=elapsed_ms,
-            **ctx,
-        )
-        return response
-
     logger.debug("Registering API routers")
     api_router.include_router(auth_router.create_router())
     api_router.include_router(query_router.create_router())
@@ -144,7 +139,7 @@ def create_app() -> FastAPI:
     logger.debug("All routers registered")
     app.include_router(api_router)
 
-    logger.info("API setup complete", debug_enabled=debug_enabled, base_path=base_path or "/")
+    logger.info("API setup complete debug_enabled=%s base_path=%s", debug_enabled, base_path or "/")
     return app
 
 

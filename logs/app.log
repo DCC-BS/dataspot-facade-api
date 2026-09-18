@@ -1,0 +1,36 @@
+2026-09-18 10:33:59,209 INFO dataspot_facade_api.app Sentry/Rustrak initialized event_level=ERROR log_level=INFO
+2026-09-18 10:33:59,211 INFO dataspot_facade_api.app Starting Dataspot Facade API application
+2026-09-18 10:33:59,219 INFO dataspot_facade_api.app Running with configuration base_url=https://datenkatalog.bs.ch database_name=wonderfull
+2026-09-18 10:33:59,243 INFO dataspot_facade_api.app API setup complete debug_enabled=False base_path=/
+2026-09-18 10:34:00,086 INFO dataspot_facade_api.app Sentry/Rustrak initialized event_level=ERROR log_level=INFO
+2026-09-18 10:34:00,087 INFO dataspot_facade_api.app Starting Dataspot Facade API application
+2026-09-18 10:34:00,096 INFO dataspot_facade_api.app Running with configuration base_url=https://datenkatalog.bs.ch database_name=wonderfull
+2026-09-18 10:34:00,120 INFO dataspot_facade_api.app API setup complete debug_enabled=False base_path=/
+2026-09-18 10:34:00,165 INFO watchfiles.main 1 change detected
+2026-09-18 10:34:00,517 INFO watchfiles.main 1 change detected
+2026-09-18 10:34:00,869 INFO watchfiles.main 1 change detected
+2026-09-18 10:34:01,222 INFO watchfiles.main 1 change detected
+2026-09-18 10:34:01,573 INFO watchfiles.main 1 change detected
+2026-09-18 10:34:01,925 INFO watchfiles.main 1 change detected
+2026-09-18 10:34:02,276 INFO watchfiles.main 1 change detected
+2026-09-18 10:34:02,628 INFO watchfiles.main 1 change detected
+2026-09-18 10:34:02,979 INFO watchfiles.main 1 change detected
+2026-09-18 10:34:03,330 INFO watchfiles.main 1 change detected
+2026-09-18 10:34:03,682 INFO watchfiles.main 1 change detected
+2026-09-18 10:34:04,033 INFO watchfiles.main 1 change detected
+2026-09-18 10:34:04,384 INFO watchfiles.main 1 change detected
+2026-09-18 10:34:04,736 INFO watchfiles.main 1 change detected
+2026-09-18 10:34:05,088 INFO watchfiles.main 1 change detected
+2026-09-18 10:34:05,439 INFO watchfiles.main 1 change detected
+2026-09-18 10:34:05,791 INFO watchfiles.main 1 change detected
+2026-09-18 10:34:06,143 INFO watchfiles.main 1 change detected
+2026-09-18 10:34:06,494 INFO watchfiles.main 1 change detected
+2026-09-18 10:34:06,846 INFO watchfiles.main 1 change detected
+2026-09-18 10:34:07,197 INFO watchfiles.main 1 change detected
+2026-09-18 10:34:07,549 INFO watchfiles.main 1 change detected
+2026-09-18 10:34:07,901 INFO watchfiles.main 1 change detected
+2026-09-18 10:34:08,253 INFO watchfiles.main 1 change detected
+2026-09-18 10:34:28,047 INFO dataspot_facade_api.app Sentry/Rustrak initialized event_level=ERROR log_level=INFO
+2026-09-18 10:34:28,049 INFO dataspot_facade_api.app Starting Dataspot Facade API application
+2026-09-18 10:34:28,061 INFO dataspot_facade_api.app Running with configuration base_url=https://datenkatalog.bs.ch database_name=wonderfull
+2026-09-18 10:34:28,085 INFO dataspot_facade_api.app API setup complete debug_enabled=False base_path=/

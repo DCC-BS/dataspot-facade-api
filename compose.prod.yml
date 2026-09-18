@@ -1,6 +1,5 @@
 services:
   # Rustrak: self-hosted, Sentry-compatible error tracking (API + dashboard).
-  # Serves the dashboard and the `/api` from the same origin on port 8080.
   rustrak:
     image: docker.io/rustrak/rustrak-server:next
     ports:
@@ -14,12 +13,25 @@ services:
       # First admin user, format email:password (only created if no users exist).
       - CREATE_SUPERUSER=${RUSTRAK_SUPERUSER}
       # Public URL SDKs should use for their DSN, e.g. https://rustrak.example.com.
-      # Must be the origin root: the dashboard cannot run under a sub-path.
-      # Without it the DSN carries the bind address (http://0.0.0.0:8080), which
-      # neither the browser nor containers can reach.
       - PUBLIC_URL=${RUSTRAK_PUBLIC_URL:-http://localhost:${RUSTRAK_PORT:-8080}}
     volumes:
       - rustrak_data:/data
+    restart: unless-stopped
+
+  # The Dataspot Facade API (this repo).
+  app:
+    build:
+      context: .
+    env_file:
+      - .env
+    environment:
+      - IS_PROD=true
+      - RUSTRAK_DSN=${RUSTRAK_DSN:-}
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    depends_on:
+      - rustrak
+    restart: unless-stopped
 
 volumes:
   rustrak_data:

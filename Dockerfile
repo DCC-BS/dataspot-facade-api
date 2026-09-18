@@ -54,6 +54,11 @@ ENV PATH="/app/.venv/bin:$PATH"
 COPY --from=build --chown=app:app /app /app
 COPY --from=build --chown=app:app /runtime /runtime
 
+# Log directory: owned by the app user so the app can write its log file.
+# Mount a volume here to persist logs across container restarts.
+RUN mkdir -p /app/logs && chown app:app /app/logs
+VOLUME /app/logs
+
 # Switch to the non-root user
 USER app
 

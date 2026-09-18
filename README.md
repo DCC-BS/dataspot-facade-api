@@ -31,6 +31,21 @@ This starts:
   data persisted in a Docker volume.
 - **dataspot-facade-api** on `http://localhost:8000`.
 
+### Production
+
+For production, `compose.prod.yml` also builds and runs this API (with
+`IS_PROD=true`) alongside Rustrak:
+
+```sh
+cp .env.example .env   # fill in values
+docker compose -f compose.yml -f compose.prod.yml up -d --build
+```
+
+The API is built from the local `Dockerfile` and served on
+`http://localhost:8000` (override with `APP_PORT`). The API port can be
+overridden with `APP_PORT`, e.g. `APP_PORT=9000 docker compose -f compose.yml
+-f compose.prod.yml up -d`.
+
 On first start Rustrak creates the admin user from `RUSTRAK_SUPERUSER` (format
 `email:password`). `SESSION_SECRET_KEY` must be set — generate one with:
 

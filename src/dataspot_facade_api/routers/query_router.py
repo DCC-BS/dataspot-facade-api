@@ -1,8 +1,8 @@
 import asyncio
+import logging
 from time import perf_counter
 
 import sentry_sdk
-from dcc_backend_common.logger import get_logger
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 
@@ -13,7 +13,7 @@ from dataspot_facade_api.services.authorization_service import NotAuthorizedErro
 from dataspot_facade_api.services.query_service import QueryService
 from dataspot_facade_api.services.utils.jwt_utils import JwtPayload
 
-logger = get_logger("query_router")
+logger = logging.getLogger("dataspot_facade_api.query_router")
 
 _jwt_payload_dependency = Depends(get_jwt_payload)
 
@@ -51,12 +51,12 @@ def create_router(
         start = perf_counter()
         sentry_sdk.set_tag("user", payload.email)
         sentry_sdk.set_tag("endpoint", "POST /v1/queries/execute")
-        logger.debug("Query execution started", user=payload.email)
+        logger.debug("Query execution started user=%s", payload.email)
 
         try:
             await authorization_service.ensure_can_execute_query(payload)
         except NotAuthorizedError as exc:
-            logger.info("Query execution denied", user=payload.email, reason=str(exc))
+            logger.info("Query execution denied user=%s reason=%s", payload.email, exc)
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
 
         try:
@@ -65,15 +65,15 @@ def create_router(
             raise
         except Exception as e:
             sentry_sdk.capture_exception(e)
-            logger.error("Query execution failed", error=str(e), user=payload.email)
+            logger.error("Query execution failed error=%s user=%s", e, payload.email)
             raise HTTPException(status_code=502, detail=f"Query API request failed: {e}") from e
 
         elapsed_ms = round((perf_counter() - start) * 1000, 2)
         sentry_sdk.set_tag("query_duration_ms", elapsed_ms)
         logger.info(
-            "Query executed successfully",
-            duration_ms=elapsed_ms,
-            user=payload.email,
+            "Query executed successfully duration_ms=%s user=%s",
+            elapsed_ms,
+            payload.email,
         )
         return result
 
