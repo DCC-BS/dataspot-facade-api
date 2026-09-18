@@ -68,16 +68,16 @@ reports four things to the Rustrak dashboard:
 - **Errors / issues** — unhandled exceptions and any record at or above
   `RUSTRAK_EVENT_LEVEL` (default `ERROR`) become dashboard issues.
 - **Logs** — every log record at or above `RUSTRAK_LOG_LEVEL` (default `INFO`)
-  is forwarded to Rustrak's **Logs** view. Both structlog (`get_logger(...)`)
-  and the Python `logging` stdlib logger are captured.
+  is forwarded to Rustrak's **Logs** view. All app logging uses the Python
+  `logging` stdlib, which the bundled `LoggingIntegration` captures.
 - **Performance / transactions** — every HTTP request becomes a transaction
   with its own timing, and handler/outbound calls are spans (driven by the
   bundled FastAPI/Starlette integrations, `traces_sample_rate` and
   `profiles_sample_rate`). Handlers also attach context via `sentry_sdk.set_tag`
   (e.g. `user`, `query_duration_ms`).
-- **Request timing** — a middleware logs each incoming request and a
-  `Request finished` line including `duration_ms`, `method`, `path` and
-  `client_host`.
+- **Audit trail** — every protected endpoint logs the acting user's email and
+  the action taken (e.g. query execution, dataset lastUpdate updates), taken
+  from the JWT payload the request already carries.
 
 > In production set `RUSTRAK_PUBLIC_URL` to your public host so SDKs get a
 > reachable DSN.
@@ -158,6 +158,17 @@ cp .env.example .env
 
 To see debug records forwarded to Rustrak, set `RUSTRAK_DEBUG=true` (or
 `RUSTRAK_LOG_LEVEL=DEBUG`).
+
+### Application log file
+
+Besides stdout and Rustrak, all log records are also written to a rotating log
+file (10 MB per file, 5 backups kept). The per-request audit entries (user
+email, action, status) land in the same file.
+
+| Variable | Default | Description |
+|---|---|---|
+| `LOG_FILE` | `/app/logs/app.log` | Path of the rotating log file. Falls back to stdout-only logging when the path is not writable (e.g. local dev). In Docker, mount a volume at `/app/logs` to persist logs |
+| `LOG_LEVEL` | `INFO` | Minimum level for stdout and the log file (`DEBUG` / `INFO` / `WARNING` / `ERROR`). `RUSTRAK_DEBUG=true` also raises this to `DEBUG` |
 
 ## Running the dev server
 
