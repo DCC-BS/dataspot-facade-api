@@ -35,13 +35,13 @@ def create_router(
             "Updates the Dataspot dataset customProperties.lastUpdate field. "
             "Requires a valid facade JWT (Bearer token). The caller must hold the "
             "'Feld eines Assets als Data Steward aktualisieren' facade-API permission "
-            "and be a Data Steward of the target dataset. Dataspot writes use the configured service user."
+            "and be a Data Steward Datenrelease of the target dataset. Dataspot writes use the configured service user."
         ),
         response_model=UpdateLastUpdateResponse,
         responses={
             200: {"description": "Dataset lastUpdate successfully updated"},
             401: {"description": "Missing or invalid JWT"},
-            403: {"description": "Caller is not authorized (permission/Data Steward)"},
+            403: {"description": "Caller is not authorized (permission/Data Steward Datenrelease)"},
             404: {"description": "Dataset not found"},
             502: {"description": "Dataspot write failed"},
         },
