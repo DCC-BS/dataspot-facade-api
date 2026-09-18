@@ -31,7 +31,7 @@ JOIN
 JOIN
     user_view u ON u.is_person = pe.id
 WHERE
-    r.label = 'Data Steward'
+    r.label = 'Data Steward Datenrelease'
     AND a.id = '{asset_id}'
     AND u.login_id IS NOT NULL
 
@@ -46,11 +46,11 @@ JOIN
 JOIN
     user_view u ON u.is_person = a.attributed_to
 WHERE
-    r.label = 'Data Steward'
+    r.label = 'Data Steward Datenrelease'
     AND a.id = '{asset_id}'
     AND u.login_id IS NOT NULL
 """
-"""Data Stewards can be attributed to an asset either via a Post they hold, or
+"""Data Stewards Datenrelaese can be attributed to an asset either via a Post they hold, or
 directly as a person (attributed_to = the person's own id). Both paths must be
 checked, otherwise direct attributions are silently missed."""
 
@@ -74,7 +74,7 @@ class DatasetAuthorizationService:
 
     async def ensure_can_update_last_update(self, dataset_id: UUID, payload: JwtPayload) -> None:
         """Raise NotAuthorizedError unless the user holds the facade-API permission
-        and is a Data Steward of the given dataset."""
+        and is a Data Steward Datenrelease of the given dataset."""
         async with httpx.AsyncClient(timeout=30.0) as client:
             await _ensure_has_facade_api_permission(
                 client,
@@ -97,12 +97,12 @@ class DatasetAuthorizationService:
                 dataset_id=str(dataset_id),
                 status_code=response.status_code,
             )
-            raise NotAuthorizedError("Could not verify Data Steward assignment")
+            raise NotAuthorizedError("Could not verify Data Steward Datenrelease assignment")
 
         stewards = _extract_emails(response.json())
         if email.strip().lower() not in stewards:
-            logger.info("User is not a Data Steward of dataset", email=email, dataset_id=str(dataset_id))
-            raise NotAuthorizedError("User is not a Data Steward of this dataset")
+            logger.info("User is not a Data Steward Datenrelease of dataset", email=email, dataset_id=str(dataset_id))
+            raise NotAuthorizedError("User is not a Data Steward Datenrelease of this dataset")
 
 
 class QueryAuthorizationService:
