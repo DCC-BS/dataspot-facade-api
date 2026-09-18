@@ -1,13 +1,20 @@
-import logging
 from uuid import UUID
 
 import httpx
+import sentry_sdk
 
 from dataspot_facade_api.app_config import Configuration
+from dataspot_facade_api.logging_config import get_logger
 from dataspot_facade_api.services.auth_service import DataspotAuthClient
 from dataspot_facade_api.services.utils.jwt_utils import JwtPayload
 
-logger = logging.getLogger("dataspot_facade_api.authorization_service")
+logger = get_logger("authorization_service")
+
+
+def _breadcrumb(message: str, category: str, level: str = "info", **data) -> None:
+    """Record a Sentry breadcrumb (attached to the next captured error)."""
+    sentry_sdk.add_breadcrumb(category=category, message=message, level=level, data=data or None)
+
 
 FACADE_API_PERMISSION_UPDATE_LAST_UPDATE_DS = "UPDATE_LAST_UPDATE_DS"
 """Permission code for 'Feld eines Assets als Data Steward aktualisieren' under Facade-API Berechtigungen."""
@@ -93,15 +100,32 @@ class DatasetAuthorizationService:
         response = await client.put(self._query_url(), headers=headers, json={"sql": sql})
         if response.status_code != 200:
             logger.error(
-                "Data Steward query failed dataset_id=%s status_code=%s",
-                dataset_id,
-                response.status_code,
+                "Data Steward query failed",
+                dataset_id=str(dataset_id),
+                status_code=response.status_code,
+            )
+            _breadcrumb(
+                "Data Steward query failed",
+                "authorization",
+                "error",
+                dataset_id=str(dataset_id),
+                status_code=response.status_code,
             )
             raise NotAuthorizedError("Could not verify Data Steward Datenrelease assignment")
 
         stewards = _extract_emails(response.json())
         if email.strip().lower() not in stewards:
-            logger.info("User is not a Data Steward of dataset email=%s dataset_id=%s", email, dataset_id)
+            logger.info(
+                "User is not a Data Steward of dataset",
+                email=email,
+                dataset_id=str(dataset_id),
+            )
+            _breadcrumb(
+                "User is not a Data Steward of dataset",
+                "authorization",
+                email=email,
+                dataset_id=str(dataset_id),
+            )
             raise NotAuthorizedError("User is not a Data Steward Datenrelease of this dataset")
 
 
@@ -142,9 +166,16 @@ async def _ensure_has_facade_api_permission(
 
     if response.status_code != 200:
         logger.error(
-            "Failed to fetch person for permission check person_id=%s status_code=%s",
-            payload.person_id,
-            response.status_code,
+            "Failed to fetch person for permission check",
+            person_id=payload.person_id,
+            status_code=response.status_code,
+        )
+        _breadcrumb(
+            "Failed to fetch person for permission check",
+            "authorization",
+            "error",
+            person_id=payload.person_id,
+            status_code=response.status_code,
         )
         raise NotAuthorizedError("Could not verify facade-API permissions")
 
@@ -153,7 +184,17 @@ async def _ensure_has_facade_api_permission(
     permissions = _as_permission_set(custom_properties.get("facade_api_permissions"))
 
     if permission_code not in permissions:
-        logger.info("User lacks facade-API permission email=%s permission=%s", payload.email, permission_code)
+        logger.info(
+            "User lacks facade-API permission",
+            email=payload.email,
+            permission=permission_code,
+        )
+        _breadcrumb(
+            "User lacks facade-API permission",
+            "authorization",
+            email=payload.email,
+            permission=permission_code,
+        )
         raise NotAuthorizedError(f"Missing '{permission_label}' permission")
 
 

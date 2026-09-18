@@ -1,14 +1,20 @@
-import logging
 from datetime import datetime, timezone
 from uuid import UUID
 
 import httpx
+import sentry_sdk
 
 from dataspot_facade_api.app_config import Configuration
+from dataspot_facade_api.logging_config import get_logger
 from dataspot_facade_api.models.dataset import UpdateLastUpdateResponse
 from dataspot_facade_api.services.auth_service import DataspotAuthClient
 
-logger = logging.getLogger("dataspot_facade_api.dataset_service")
+logger = get_logger("dataset_service")
+
+
+def _breadcrumb(message: str, category: str, level: str = "info", **data) -> None:
+    """Record a Sentry breadcrumb (attached to the next captured error)."""
+    sentry_sdk.add_breadcrumb(category=category, message=message, level=level, data=data or None)
 
 
 class DatasetNotFoundError(Exception):
@@ -49,17 +55,25 @@ class DatasetService:
         headers = self._dataspot_auth.get_service_headers()
         epoch_ms = self._to_epoch_ms(last_update)
 
-        logger.info("Updating dataset lastUpdate dataset_id=%s last_update_ms=%s", dataset_id, epoch_ms)
+        logger.info("Updating dataset lastUpdate", dataset_id=str(dataset_id), last_update_ms=epoch_ms)
 
         async with httpx.AsyncClient(timeout=30.0) as client:
             get_response = await client.get(url, headers=headers)
             if get_response.status_code == 404:
+                _breadcrumb("Dataset not found", "dataset", "warning", dataset_id=str(dataset_id))
                 raise DatasetNotFoundError(f"Dataset {dataset_id} was not found")
             if get_response.status_code != 200:
                 logger.error(
-                    "Failed to fetch dataset before update dataset_id=%s status_code=%s",
-                    dataset_id,
-                    get_response.status_code,
+                    "Failed to fetch dataset before update",
+                    dataset_id=str(dataset_id),
+                    status_code=get_response.status_code,
+                )
+                _breadcrumb(
+                    "Failed to fetch dataset before update",
+                    "dataset",
+                    "error",
+                    dataset_id=str(dataset_id),
+                    status_code=get_response.status_code,
                 )
                 raise DatasetUpdateError(
                     "Failed to fetch dataset from Dataspot",
@@ -80,12 +94,20 @@ class DatasetService:
             )
 
             if patch_response.status_code == 404:
+                _breadcrumb("Dataset not found", "dataset", "warning", dataset_id=str(dataset_id))
                 raise DatasetNotFoundError(f"Dataset {dataset_id} was not found")
             if patch_response.status_code not in (200, 201):
                 logger.error(
-                    "Failed to update dataset lastUpdate dataset_id=%s status_code=%s",
-                    dataset_id,
-                    patch_response.status_code,
+                    "Failed to update dataset lastUpdate",
+                    dataset_id=str(dataset_id),
+                    status_code=patch_response.status_code,
+                )
+                _breadcrumb(
+                    "Failed to update dataset lastUpdate",
+                    "dataset",
+                    "error",
+                    dataset_id=str(dataset_id),
+                    status_code=patch_response.status_code,
                 )
                 raise DatasetUpdateError(
                     "Failed to update dataset lastUpdate in Dataspot",
@@ -95,7 +117,7 @@ class DatasetService:
             updated = patch_response.json()
             updated_value = (updated.get("customProperties") or {}).get("lastUpdate", epoch_ms)
 
-        logger.info("Updated dataset lastUpdate dataset_id=%s", dataset_id)
+        logger.info("Updated dataset lastUpdate", dataset_id=str(dataset_id))
         return UpdateLastUpdateResponse(
             id=dataset_id,
             last_update=self._from_epoch_ms(updated_value),

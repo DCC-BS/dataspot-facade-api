@@ -1,4 +1,3 @@
-import logging
 import os
 import secrets
 from dataclasses import dataclass
@@ -6,13 +5,20 @@ from datetime import datetime, timedelta, timezone
 
 import jwt
 import requests
+import sentry_sdk
 from dotenv import load_dotenv
 
 from dataspot_facade_api.app_config import Configuration
+from dataspot_facade_api.logging_config import get_logger
 
 load_dotenv()
 
-logger = logging.getLogger("dataspot_facade_api.auth_service")
+logger = get_logger("auth_service")
+
+
+def _breadcrumb(message: str, category: str, level: str = "info", **data) -> None:
+    """Record a Sentry breadcrumb (attached to the next captured error)."""
+    sentry_sdk.add_breadcrumb(category=category, message=message, level=level, data=data or None)
 
 
 @dataclass
@@ -110,14 +116,17 @@ class AuthService:
 
         if response.status_code == 401:
             logger.debug("Access key validation rejected by Dataspot (401)")
+            _breadcrumb("Access key validation rejected by Dataspot (401)", "auth", "warning")
             return None
 
         if response.status_code == 500 and "Last unit does not have enough valid bits" in response.text:
             logger.debug("Access key is malformed")
+            _breadcrumb("Access key is malformed", "auth", "warning")
             return None
 
         if response.status_code != 200:
-            logger.error("Unexpected Dataspot validation status status_code=%s", response.status_code)
+            logger.error("Unexpected Dataspot validation status", status_code=response.status_code)
+            _breadcrumb("Unexpected Dataspot validation status", "auth", "error", status_code=response.status_code)
             return None
 
         tag_name = f"TMP_ACCESS_KEY_OWNER_PROBE_{secrets.token_urlsafe(32)}"
@@ -130,9 +139,10 @@ class AuthService:
 
         if create_response.status_code not in (200, 201):
             logger.error(
-                "Failed to create temporary tag status_code=%s",
-                create_response.status_code,
+                "Failed to create temporary tag",
+                status_code=create_response.status_code,
             )
+            _breadcrumb("Failed to create temporary tag", "auth", "error", status_code=create_response.status_code)
             return None
 
         created = create_response.json()
@@ -150,7 +160,8 @@ class AuthService:
             logger.error("Temporary tag created but createdBy was missing")
             return None
 
-        logger.debug("Access key owner identified via probe tag email=%s", email)
+        logger.debug("Access key owner identified via probe tag", email=email)
+        _breadcrumb("Access key owner identified via probe tag", "auth", data={"email": email})
         return email
 
     def _lookup_user(self, email: str) -> dict | None:
@@ -164,10 +175,11 @@ class AuthService:
 
         if response.status_code != 200:
             logger.error(
-                "Failed to look up user ID in Dataspot email=%s status_code=%s",
-                email,
-                response.status_code,
+                "Failed to look up user ID in Dataspot",
+                email=email,
+                status_code=response.status_code,
             )
+            _breadcrumb("Failed to look up user ID in Dataspot", "auth", "error", status_code=response.status_code)
             return None
 
         data = response.json()
@@ -179,7 +191,8 @@ class AuthService:
                 break
 
         if not users:
-            logger.error("No Dataspot users found for email email=%s", email)
+            logger.error("No Dataspot users found for email", email=email)
+            _breadcrumb("No Dataspot users found for email", "auth", "error", email=email)
             return None
 
         for user in users:

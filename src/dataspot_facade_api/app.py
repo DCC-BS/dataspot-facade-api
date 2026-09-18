@@ -9,10 +9,10 @@ from sentry_sdk.integrations.logging import LoggingIntegration
 from sentry_sdk.integrations.starlette import StarletteIntegration
 
 from dataspot_facade_api.container import Container
-from dataspot_facade_api.logging_config import setup_logging
+from dataspot_facade_api.logging_config import get_logger, setup_logging
 from dataspot_facade_api.routers import auth_router, dataset_router, query_router
 
-logger = logging.getLogger("dataspot_facade_api.app")
+logger = get_logger("app")
 
 
 def create_app() -> FastAPI:
@@ -56,9 +56,9 @@ def create_app() -> FastAPI:
             _experiments={"enable_logs": True},
         )
         logger.info(
-            "Sentry/Rustrak initialized event_level=%s log_level=%s",
-            rustrak_event_level,
-            rustrak_log_level,
+            "Sentry/Rustrak initialized",
+            event_level=rustrak_event_level,
+            log_level=rustrak_log_level,
         )
     else:
         logger.warning("RUSTRAK_DSN not set; error tracking and performance disabled")
@@ -77,13 +77,13 @@ def create_app() -> FastAPI:
         ]
     )
     container.check_dependencies()
-    logger.debug("Dependency injection configured container_ok=True")
+    logger.debug("Dependency injection configured", container_ok=True)
 
     config = container.config()
     logger.info(
-        "Running with configuration base_url=%s database_name=%s",
-        config.dataspot_base_url,
-        config.database_name,
+        "Running with configuration",
+        base_url=config.dataspot_base_url,
+        database_name=config.database_name,
     )
 
     app = FastAPI(
@@ -139,7 +139,7 @@ def create_app() -> FastAPI:
     logger.debug("All routers registered")
     app.include_router(api_router)
 
-    logger.info("API setup complete debug_enabled=%s base_path=%s", debug_enabled, base_path or "/")
+    logger.info("API setup complete", debug_enabled=debug_enabled, base_path=base_path or "/")
     return app
 
 

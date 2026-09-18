@@ -1,6 +1,7 @@
 import logging
 import os
 from logging.handlers import RotatingFileHandler
+from typing import Any, cast
 
 LOG_FILE_ENV = "LOG_FILE"
 LOG_LEVEL_ENV = "LOG_LEVEL"
@@ -17,6 +18,56 @@ _STREAM_FORMAT = "%(asctime)s %(levelname)-8s %(name)s %(message)s"
 _configured = False
 
 
+class KvLogger(logging.Logger):
+    """Logger that accepts structlog-style named arguments.
+
+    Keyword arguments are rendered as `key=value` pairs appended to the
+    message, e.g. `logger.info("Query executed", user="a@b.ch", duration_ms=42)`
+    logs `Query executed user=a@b.ch duration_ms=42`.
+    """
+
+    def _render(self, msg: str, args: tuple, kwargs: dict[str, Any]) -> tuple[str, tuple]:
+        fields = " ".join(f"{key}={value}" for key, value in kwargs.items())
+        message = f"{msg} {fields}" if fields else msg
+        return message, args
+
+    def debug(self, msg: str, *args: Any, **kwargs: Any) -> None:
+        message, args = self._render(msg, args, kwargs)
+        super().debug(message, *args)
+
+    def info(self, msg: str, *args: Any, **kwargs: Any) -> None:
+        message, args = self._render(msg, args, kwargs)
+        super().info(message, *args)
+
+    def warning(self, msg: str, *args: Any, **kwargs: Any) -> None:
+        message, args = self._render(msg, args, kwargs)
+        super().warning(message, *args)
+
+    def error(self, msg: str, *args: Any, **kwargs: Any) -> None:
+        message, args = self._render(msg, args, kwargs)
+        super().error(message, *args)
+
+    def critical(self, msg: str, *args: Any, **kwargs: Any) -> None:
+        message, args = self._render(msg, args, kwargs)
+        super().critical(message, *args)
+
+    def exception(self, msg: str, *args: Any, **kwargs: Any) -> None:
+        message, args = self._render(msg, args, kwargs)
+        super().exception(message, *args)
+
+
+def get_logger(name: str) -> KvLogger:
+    """Return a KvLogger under the app's logger namespace."""
+    logger = logging.getLogger(f"dataspot_facade_api.{name}")
+    if isinstance(logger, KvLogger):
+        return logger
+    # getLogger only returns KvLogger once setup_logging() has swapped in the
+    # KvLogger class; recreate the logger if it was cached as a plain Logger.
+    logging.root.manager.loggerDict.pop(f"dataspot_facade_api.{name}", None)
+    logging.setLoggerClass(KvLogger)
+    return cast(KvLogger, logging.getLogger(f"dataspot_facade_api.{name}"))
+
+
 def setup_logging() -> None:
     """Configure stdlib logging with a rotating file handler and a stdout stream handler.
 
@@ -27,6 +78,13 @@ def setup_logging() -> None:
     global _configured
     if _configured:
         return
+
+    logging.setLoggerClass(KvLogger)
+    # Re-create the app's loggers so they use KvLogger (setLoggerClass only
+    # affects loggers created afterwards).
+    for logger_name in list(logging.root.manager.loggerDict):
+        if logger_name.startswith("dataspot_facade_api"):
+            del logging.root.manager.loggerDict[logger_name]
 
     log_file = os.environ.get(LOG_FILE_ENV, DEFAULT_LOG_FILE)
     log_level_name = os.environ.get(LOG_LEVEL_ENV, DEFAULT_LOG_LEVEL).upper()
