@@ -23,37 +23,47 @@ class KvLogger(logging.Logger):
 
     Keyword arguments are rendered as `key=value` pairs appended to the
     message, e.g. `logger.info("Query executed", user="a@b.ch", duration_ms=42)`
-    logs `Query executed user=a@b.ch duration_ms=42`.
+    logs `Query executed user=a@b.ch duration_ms=42`. The same fields are also
+    attached to the LogRecord as `extra`, so the Sentry/Rustrak
+    LoggingIntegration forwards them as searchable attributes.
     """
 
-    def _render(self, msg: str, args: tuple, kwargs: dict[str, Any]) -> tuple[str, tuple]:
+    def _render(self, msg: str, args: tuple, kwargs: dict[str, Any]) -> tuple[str, dict[str, Any]]:
         fields = " ".join(f"{key}={value}" for key, value in kwargs.items())
         message = f"{msg} {fields}" if fields else msg
-        return message, args
+        return message, kwargs
+
+    def _log_with_kwargs(self, level: int, msg: str, args: tuple, kwargs: dict[str, Any]) -> None:
+        message, extra = self._render(msg, args, kwargs)
+        if self.isEnabledFor(level):
+            self._log(
+                level,
+                message,
+                args,
+                exc_info=kwargs.pop("exc_info", None),
+                extra=extra,
+                stack_info=False,
+                stacklevel=1,
+            )
 
     def debug(self, msg: str, *args: Any, **kwargs: Any) -> None:
-        message, args = self._render(msg, args, kwargs)
-        super().debug(message, *args)
+        self._log_with_kwargs(logging.DEBUG, msg, args, kwargs)
 
     def info(self, msg: str, *args: Any, **kwargs: Any) -> None:
-        message, args = self._render(msg, args, kwargs)
-        super().info(message, *args)
+        self._log_with_kwargs(logging.INFO, msg, args, kwargs)
 
     def warning(self, msg: str, *args: Any, **kwargs: Any) -> None:
-        message, args = self._render(msg, args, kwargs)
-        super().warning(message, *args)
+        self._log_with_kwargs(logging.WARNING, msg, args, kwargs)
 
     def error(self, msg: str, *args: Any, **kwargs: Any) -> None:
-        message, args = self._render(msg, args, kwargs)
-        super().error(message, *args)
+        self._log_with_kwargs(logging.ERROR, msg, args, kwargs)
 
     def critical(self, msg: str, *args: Any, **kwargs: Any) -> None:
-        message, args = self._render(msg, args, kwargs)
-        super().critical(message, *args)
+        self._log_with_kwargs(logging.CRITICAL, msg, args, kwargs)
 
     def exception(self, msg: str, *args: Any, **kwargs: Any) -> None:
-        message, args = self._render(msg, args, kwargs)
-        super().exception(message, *args)
+        kwargs.setdefault("exc_info", True)
+        self._log_with_kwargs(logging.ERROR, msg, args, kwargs)
 
 
 def get_logger(name: str) -> KvLogger:
