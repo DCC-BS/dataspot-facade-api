@@ -61,7 +61,7 @@ def main():
     args = parser.parse_args()
 
     client = FacadeClient(args.base_url, args.access_key)
-    result = client.execute_query("SELECT * FROM example_table LIMIT 5")
+    result = client.execute_query("SELECT * FROM post_view LIMIT 5")
     print(json.dumps(result, indent=2))
 
 
