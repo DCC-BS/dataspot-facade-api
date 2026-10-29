@@ -18,6 +18,7 @@ import truststore
 
 truststore.inject_into_ssl()
 
+
 class FacadeClient:
     """Talk to the facade API, authenticating and auto-refreshing the JWT on a 401."""
 
