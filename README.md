@@ -35,10 +35,10 @@ Access to the API depends on your specific permissions within Dataspot.
 | **Run Query** | `/v1/queries/execute` | Requires the corresponding permission in Dataspot (granted by DCC). |
 | **Update lastUpdate** | `/v1/datasets/{id}/last-update` | 1. Requires the corresponding permission in Dataspot.<br>2. Only the assigned **"Data Steward Datenrelease"** for that specific data product is authorized to perform this action. |
 
-### 4. Testing your Setup
+### 4. Testing your Setup with python
 To verify that your permissions are correctly configured and the API is reachable, you can use the provided Python example script:
 
-* **Install httpx:** `pip install httpx>=0.28.1 truststore>=0.10.5`
+* **Install httpx:** `pip install httpx truststore` (I used httpx==0.28.1 truststore==0.10.5, but newer versions are preferable)
 * **Download example script:** [examples/python/example.py](https://github.com/DCC-BS/dataspot-facade-api/blob/main/examples/python/example.py)
 * **Execution:** Run the script with `python example.py --access-key <your-access-key>`
 * **Result** The result should be the number of posts in dataspot, e.g.
