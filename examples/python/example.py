@@ -14,7 +14,9 @@ import argparse
 import json
 
 import httpx
+import truststore
 
+truststore.inject_into_ssl()
 
 class FacadeClient:
     """Talk to the facade API, authenticating and auto-refreshing the JWT on a 401."""
@@ -22,7 +24,7 @@ class FacadeClient:
     def __init__(self, base_url, access_key):
         self.access_key = access_key
         self.token = None
-        self._client = httpx.Client(base_url=f"{base_url.rstrip('/')}/v1")
+        self._client = httpx.Client(base_url=f"{base_url.rstrip('/')}")
 
     def _refresh_token(self):
         """Exchange the access key for a fresh facade JWT via POST /v1/auth."""
@@ -38,7 +40,7 @@ class FacadeClient:
 
         def run_request():
             return self._client.post(
-                "/queries/execute", json={"sql": sql}, headers={"Authorization": f"Bearer {self.token}"}
+                "/v1/queries/execute", json={"sql": sql}, headers={"Authorization": f"Bearer {self.token}"}
             )
 
         response = run_request()
@@ -55,13 +57,13 @@ class FacadeClient:
 def main():
     parser = argparse.ArgumentParser(description="Call the facade API, refreshing the JWT on a 401")
     parser.add_argument(
-        "--base-url", default="http://127.0.0.1:8000", help="Base host of the facade API, e.g. http://127.0.0.1:8000"
+        "--base-url", default="https://facade-api.datenkatalog.bs.ch", help="Base host of the facade API"
     )
     parser.add_argument("--access-key", required=True, help="Dataspot access key used to obtain a JWT")
     args = parser.parse_args()
 
     client = FacadeClient(args.base_url, args.access_key)
-    result = client.execute_query("SELECT * FROM post_view LIMIT 5")
+    result = client.execute_query("SELECT COUNT(*) FROM post_view LIMIT 5")
     print(json.dumps(result, indent=2))
 
 
