@@ -2,6 +2,53 @@
 
 FastAPI facade service for the Dataspot platform.
 
+## User Guide
+
+This guide is for users who want to use and test the Dataspot Facade API.
+
+**Official API Documentation:** [https://facade-api.datenkatalog.bs.ch/docs](https://facade-api.datenkatalog.bs.ch/docs)
+
+### 1. Check Your Permissions
+Verify that you have the necessary permissions in Dataspot:
+
+1. Log in to Dataspot.
+2. Navigate to **"Data Governance"** $\rightarrow$ **"Personen"** $\rightarrow$ select your own profile.
+3. Check the section **"Facade-API Berechtigungen"**.
+4. If the required permissions are not listed, please contact the **DCC Data Competence Center** at **dcc@bs.ch**.
+
+### 2. Authentication
+The API is protected by JWT (JSON Web Tokens). To make requests, you must first obtain a token.
+
+**Step A: Get your Access Key (`access_key`)**
+1. Log in to [datenkatalog.bs.ch](https://datenkatalog.bs.ch).
+2. Click on the **User icon** (head icon at the top right).
+3. Navigate to **"Access Keys…"** and create a new access key.
+
+**Step B: Exchange the Access Key for a JWT**
+* Call the `/v1/auth` endpoint using your `access_key` to receive a short-lived JWT (this is usually done directly in code, e.g. in [example.py](https://github.com/DCC-BS/dataspot-facade-api/blob/main/examples/python/example.py)). This JWT must be used in the Authorization header for all subsequent API calls.
+
+### 3. Functionalities & Permissions
+Access to the API depends on your specific permissions within Dataspot.
+
+| Functionality | Endpoint | Requirements |
+| :--- | :--- | :--- |
+| **Run Query** | `/v1/queries/execute` | Requires the corresponding permission in Dataspot (granted by DCC). |
+| **Update lastUpdate** | `/v1/datasets/{id}/last-update` | 1. Requires the corresponding permission in Dataspot.<br>2. Only the assigned **"Data Steward Datenrelease"** for that specific data product is authorized to perform this action. |
+
+### 4. Testing your Setup
+To verify that your permissions are correctly configured and the API is reachable, you can use the provided Python example script:
+
+* **Install httpx:** `pip install httpx>=0.28.1 truststore>=0.10.5`
+* **Download example script:** [examples/python/example.py](https://github.com/DCC-BS/dataspot-facade-api/blob/main/examples/python/example.py)
+* **Execution:** Run the script with `python example.py --access-key <your-access-key>`
+* **Result** The result should be the number of posts in dataspot, e.g.
+``   (got fresh JWT)
+[
+  {
+    "count": 328
+  }
+]``
+
 ## Requirements
 
 - [mise](https://mise.jdx.dev/) (manages the toolchain, incl. `uv` and Python)
