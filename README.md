@@ -42,12 +42,16 @@ To verify that your permissions are correctly configured and the API is reachabl
 * **Download example script:** [examples/python/example.py](https://github.com/DCC-BS/dataspot-facade-api/blob/main/examples/python/example.py)
 * **Execution:** Run the script with `python example.py --access-key <your-access-key>`
 * **Result** The result should be the number of posts in dataspot, e.g.
-``   (got fresh JWT)
+```   (got fresh JWT)
 [
   {
     "count": 328
   }
-]``
+]
+```
+
+# Deployment & Hosting
+> **Note:** This section is intended for administrators and developers. If you are only using the API as a consumer, you can stop reading here.
 
 ## Requirements
 
