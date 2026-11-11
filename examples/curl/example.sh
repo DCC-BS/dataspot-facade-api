@@ -7,11 +7,11 @@
 #
 # Requires curl and jq.
 #
-# Point it at a running Dataspot Facade API (defaults to http://localhost:8000).
+# Point it at a running Dataspot Facade API (defaults to https://facade-api.datenkatalog.bs.ch).
 
 set -euo pipefail
 
-BASE_URL="${BASE_URL:-http://localhost:8000}"
+BASE_URL="${BASE_URL:-https://facade-api.datenkatalog.bs.ch}"
 ACCESS_KEY="${ACCESS_KEY:?Set your ACCESS_KEY}"
 
 get_token() {
@@ -25,7 +25,7 @@ run_query() {
     curl -sS -w '\n%{http_code}' -X POST "${BASE_URL}/v1/queries/execute" \
         -H "Content-Type: application/json" \
         -H "Authorization: Bearer ${token}" \
-        -d '{"sql": "SELECT * FROM example_table LIMIT 5"}'
+        -d '{"sql": "SELECT COUNT(*) FROM post_view LIMIT 5"}'
 }
 
 # 1. Exchange the access key for a facade JWT.
